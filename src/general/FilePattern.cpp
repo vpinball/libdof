@@ -39,21 +39,28 @@ std::vector<FileInfo> FilePattern::GetMatchingFiles(const std::unordered_map<std
    std::vector<FileInfo> out;
    if (m_pattern.empty())
       return out;
-   auto pattern = ReplacePlaceholders(replaceValues);
-   std::filesystem::path p(pattern);
-   std::filesystem::path dir = p.has_parent_path() ? p.parent_path() : std::filesystem::current_path();
-   if (!std::filesystem::exists(dir))
-      return out;
-   auto namePattern = p.filename().string();
 
-   for (auto const& entry : std::filesystem::directory_iterator(dir))
+   try
    {
-      if (entry.is_regular_file())
+      auto pattern = ReplacePlaceholders(replaceValues);
+      std::filesystem::path p(pattern);
+      std::filesystem::path dir = p.has_parent_path() ? p.parent_path() : std::filesystem::current_path();
+      if (!std::filesystem::exists(dir))
+         return out;
+      auto namePattern = p.filename().string();
+
+      for (auto const& entry : std::filesystem::directory_iterator(dir))
       {
-         auto filename = entry.path().filename().string();
-         if (MatchesPattern(filename, namePattern))
-            out.emplace_back(entry.path().string());
+         if (entry.is_regular_file())
+         {
+            auto filename = entry.path().filename().string();
+            if (MatchesPattern(filename, namePattern))
+               out.emplace_back(entry.path().string());
+         }
       }
+   }
+   catch (...)
+   {
    }
    return out;
 }
