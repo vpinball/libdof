@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
-#include <fstream>
 
 namespace DOF
 {
@@ -85,15 +84,6 @@ std::string PinOneAutoConfigurator::TestSerialPort(const char* portName)
    {
       if (sp_get_port_by_name(portName, &port) != SP_OK)
          return "";
-
-      std::string portPath(portName);
-      std::ifstream portFile(portPath);
-      if (!portFile.good())
-      {
-         sp_free_port(port);
-         return "";
-      }
-      portFile.close();
 
       if (sp_open(port, SP_MODE_READ_WRITE) != SP_OK)
       {
