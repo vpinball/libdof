@@ -30,17 +30,23 @@ curl -sL https://github.com/libusb/libusb/archive/${LIBUSB_SHA}.tar.gz -o libusb
 tar xzf libusb-${LIBUSB_SHA}.tar.gz
 mv libusb-${LIBUSB_SHA} libusb
 cd libusb
-sed -i.bak 's/LIBRARY.*libusb-1.0/LIBRARY libusb64-1.0/' libusb/libusb-1.0.def
-# remove patch after this is fixed: https://github.com/libusb/libusb/issues/1649#issuecomment-2940138443
-cp ../../platforms/win/x64/libusb/libusb_dll.vcxproj msvc
-msbuild.exe msvc/libusb_dll.vcxproj \
-   -p:TargetName=libusb64-1.0 \
-   -p:Platform=x64 \
-   -p:Configuration=Release
+sed -i.bak 's/libusb-1\.0/libusb64-1.0/g' libusb/Makefile.am
+sed -i.bak 's/libusb_1_0/libusb64_1_0/g' libusb/Makefile.am
+mv libusb/libusb-1.0.def libusb/libusb64-1.0.def
+mv libusb/libusb-1.0.rc libusb/libusb64-1.0.rc
+sed -i.bak 's/libusb-1\.0/libusb64-1.0/g' libusb/libusb64-1.0.def
+sed -i.bak 's/libusb-1\.0/libusb64-1.0/g' libusb/libusb64-1.0.rc
+CURRENT_DIR="$(pwd)"
+MSYSTEM=UCRT64 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+   cd \"${CURRENT_DIR}\" &&
+   ./autogen.sh &&
+   ./configure --enable-shared &&
+   make -j\$(nproc)
+"
 mkdir -p ../../third-party/include/libusb-1.0
 cp libusb/libusb.h ../../third-party/include/libusb-1.0
-cp build/v143/x64/Release/libusb_dll/../dll/libusb64-1.0.lib ../../third-party/build-libs/win/x64
-cp build/v143/x64/Release/libusb_dll/../dll/libusb64-1.0.dll ../../third-party/runtime-libs/win/x64
+cp libusb/.libs/libusb64-1.0.dll.a ../../third-party/build-libs/win/x64/libusb64-1.0.lib
+cp libusb/.libs/libusb64-1.0.dll ../../third-party/runtime-libs/win/x64/
 cd ..
 
 #
@@ -52,31 +58,38 @@ tar xzf libserialport-${LIBSERIALPORT_SHA}.tar.gz
 mv libserialport-${LIBSERIALPORT_SHA} libserialport
 cd libserialport
 cp libserialport.h ../../third-party/include
-msbuild.exe libserialport.sln \
-   -p:PlatformToolset=v143 \
-   -p:TargetName=libserialport64 \
-   -p:Platform=x64 \
-   -p:Configuration=Release
-cp x64/Release/libserialport64.lib ../../third-party/build-libs/win/x64
-cp x64/Release/libserialport64.dll ../../third-party/runtime-libs/win/x64
+sed -i.bak 's/libserialport\.la/libserialport64.la/g; s/libserialport_la/libserialport64_la/g' Makefile.am
+CURRENT_DIR="$(pwd)"
+MSYSTEM=UCRT64 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+   cd \"${CURRENT_DIR}\" &&
+   ./autogen.sh &&
+   ./configure &&
+   make -j\$(nproc)
+"
+cp .libs/libserialport64.dll.a ../../third-party/build-libs/win/x64/libserialport64.lib
+cp .libs/libserialport64-0.dll ../../third-party/runtime-libs/win/x64/
 cd ..
 
 #
-# build hdiapi and copy to third-party
+# build hidapi and copy to third-party
 #
 
 curl -sL https://github.com/libusb/hidapi/archive/${HIDAPI_SHA}.tar.gz -o hidapi-${HIDAPI_SHA}.tar.gz
 tar xzf hidapi-${HIDAPI_SHA}.tar.gz
 mv hidapi-${HIDAPI_SHA} hidapi
 cd hidapi
-sed -i.bak 's/OUTPUT_NAME "hidapi"/OUTPUT_NAME "hidapi64"/' windows/CMakeLists.txt
-cmake \
-   -G "Visual Studio 17 2022" \
-   -B build
-cmake --build build --config ${BUILD_TYPE}
+sed -i.bak 's/OUTPUT_NAME "hidapi"/OUTPUT_NAME "hidapi64"\n  PREFIX ""\n  IMPORT_PREFIX ""/' windows/CMakeLists.txt
+CURRENT_DIR="$(pwd)"
+MSYSTEM=UCRT64 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+   cd \"${CURRENT_DIR}\" &&
+   cmake \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build &&
+   cmake --build build -- -j\$(nproc)
+"
 cp -r hidapi ../../third-party/include/
-cp build/src/windows/${BUILD_TYPE}/hidapi64.lib ../../third-party/build-libs/win/x64/
-cp build/src/windows/${BUILD_TYPE}/hidapi64.dll ../../third-party/runtime-libs/win/x64/
+cp build/src/windows/hidapi64.dll.a ../../third-party/build-libs/win/x64/hidapi64.lib
+cp build/src/windows/hidapi64.dll ../../third-party/runtime-libs/win/x64/
 cd ..
 
 #
@@ -97,10 +110,10 @@ MSYSTEM=UCRT64 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
       -DEXAMPLES=OFF \
       -DSTATICLIBS=OFF \
       -DLIBUSB_INCLUDE_DIR=../libusb/libusb \
-      -DLIBUSB_LIBRARIES=$(pwd)/../libusb/build/v143/x64/Release/libusb_dll/../dll/libusb64-1.0.dll \
+      -DLIBUSB_LIBRARIES=$(pwd)/../../third-party/runtime-libs/win/x64/libusb64-1.0.dll \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build &&
-   cmake --build build -- -j$(nproc)
+   cmake --build build -- -j\$(nproc)
 "
 
 mkdir -p ../../third-party/include/libftdi1
@@ -110,7 +123,7 @@ cp build/src/libftdi164.dll ../../third-party/runtime-libs/win/x64/
 cd ..
 
 #
-# copy UCRT64 runtime DLLs (needed by MinGW-built libftdi164.dll)
+# copy UCRT64 runtime DLLs (needed by MinGW-built DLLs)
 #
 
 UCRT64_BIN="${MSYS2_PATH}/ucrt64/bin"

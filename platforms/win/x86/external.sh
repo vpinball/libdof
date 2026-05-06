@@ -30,15 +30,17 @@ curl -sL https://github.com/libusb/libusb/archive/${LIBUSB_SHA}.tar.gz -o libusb
 tar xzf libusb-${LIBUSB_SHA}.tar.gz
 mv libusb-${LIBUSB_SHA} libusb
 cd libusb
-# remove patch after this is fixed: https://github.com/libusb/libusb/issues/1649#issuecomment-2940138443
-cp ../../platforms/win/x86/libusb/libusb_dll.vcxproj msvc
-msbuild.exe msvc/libusb_dll.vcxproj \
-   -p:Platform=x86 \
-   -p:Configuration=Release
+CURRENT_DIR="$(pwd)"
+MSYSTEM=MINGW32 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+   cd \"${CURRENT_DIR}\" &&
+   ./autogen.sh &&
+   ./configure --enable-shared &&
+   make -j\$(nproc)
+"
 mkdir -p ../../third-party/include/libusb-1.0
 cp libusb/libusb.h ../../third-party/include/libusb-1.0
-cp build/v143/Win32/Release/libusb_dll/../dll/libusb-1.0.lib ../../third-party/build-libs/win/x86
-cp build/v143/Win32/Release/libusb_dll/../dll/libusb-1.0.dll ../../third-party/runtime-libs/win/x86
+cp libusb/.libs/libusb-1.0.dll.a ../../third-party/build-libs/win/x86/libusb-1.0.lib
+cp libusb/.libs/libusb-1.0.dll ../../third-party/runtime-libs/win/x86/
 cd ..
 
 #
@@ -50,30 +52,37 @@ tar xzf libserialport-${LIBSERIALPORT_SHA}.tar.gz
 mv libserialport-${LIBSERIALPORT_SHA} libserialport
 cd libserialport
 cp libserialport.h ../../third-party/include
-msbuild.exe libserialport.sln \
-   -p:PlatformToolset=v143 \
-   -p:Platform=x86 \
-   -p:Configuration=Release
-cp Release/libserialport.lib ../../third-party/build-libs/win/x86
-cp Release/libserialport.dll ../../third-party/runtime-libs/win/x86
+CURRENT_DIR="$(pwd)"
+MSYSTEM=MINGW32 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+   cd \"${CURRENT_DIR}\" &&
+   ./autogen.sh &&
+   ./configure &&
+   make -j\$(nproc)
+"
+cp .libs/libserialport.dll.a ../../third-party/build-libs/win/x86/libserialport.lib
+cp .libs/libserialport-0.dll ../../third-party/runtime-libs/win/x86/
 cd ..
 
 #
-# build hdiapi and copy to third-party
+# build hidapi and copy to third-party
 #
 
 curl -sL https://github.com/libusb/hidapi/archive/${HIDAPI_SHA}.tar.gz -o hidapi-${HIDAPI_SHA}.tar.gz
 tar xzf hidapi-${HIDAPI_SHA}.tar.gz
 mv hidapi-${HIDAPI_SHA} hidapi
 cd hidapi
-cmake \
-   -G "Visual Studio 17 2022" \
-   -A Win32 \
-   -B build
-cmake --build build --config ${BUILD_TYPE}
+sed -i.bak 's/OUTPUT_NAME "hidapi"/OUTPUT_NAME "hidapi"\n  PREFIX ""\n  IMPORT_PREFIX ""/' windows/CMakeLists.txt
+CURRENT_DIR="$(pwd)"
+MSYSTEM=MINGW32 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+   cd \"${CURRENT_DIR}\" &&
+   cmake \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build &&
+   cmake --build build -- -j\$(nproc)
+"
 cp -r hidapi ../../third-party/include/
-cp build/src/windows/${BUILD_TYPE}/hidapi.lib ../../third-party/build-libs/win/x86/
-cp build/src/windows/${BUILD_TYPE}/hidapi.dll ../../third-party/runtime-libs/win/x86/
+cp build/src/windows/hidapi.dll.a ../../third-party/build-libs/win/x86/hidapi.lib
+cp build/src/windows/hidapi.dll ../../third-party/runtime-libs/win/x86/
 cd ..
 
 #
@@ -93,13 +102,23 @@ MSYSTEM=MINGW32 "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
       -DEXAMPLES=OFF \
       -DSTATICLIBS=OFF \
       -DLIBUSB_INCLUDE_DIR=../libusb/libusb \
-      -DLIBUSB_LIBRARIES=$(pwd)/../libusb/build/v143/Win32/Release/libusb_dll/../dll/libusb-1.0.lib \
+      -DLIBUSB_LIBRARIES=$(pwd)/../../third-party/runtime-libs/win/x86/libusb-1.0.dll \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build &&
-   cmake --build build -- -j$(nproc)
+   cmake --build build -- -j\$(nproc)
 "
 mkdir -p ../../third-party/include/libftdi1
 cp src/ftdi.h ../../third-party/include/libftdi1
 cp build/src/libftdi1.dll.a ../../third-party/build-libs/win/x86/libftdi1.lib
 cp build/src/libftdi1.dll ../../third-party/runtime-libs/win/x86/
 cd ..
+
+#
+# copy MINGW32 runtime DLLs (needed by MinGW-built DLLs)
+#
+
+MINGW32_BIN="${MSYS2_PATH}/mingw32/bin"
+
+cp "${MINGW32_BIN}/libgcc_s_dw2-1.dll" ../third-party/runtime-libs/win/x86/
+cp "${MINGW32_BIN}/libstdc++-6.dll" ../third-party/runtime-libs/win/x86/
+cp "${MINGW32_BIN}/libwinpthread-1.dll" ../third-party/runtime-libs/win/x86/
