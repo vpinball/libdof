@@ -1,5 +1,6 @@
 #include "NamedPipeServer.h"
 #include "../../../general/StringExtensions.h"
+#include "../../../Log.h"
 #include <thread>
 #include <vector>
 #include <stdexcept>
@@ -10,6 +11,7 @@
 #else
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <cstring>
 #endif
@@ -22,17 +24,39 @@ const std::string NamedPipeServer::s_pipeName = "ComPortServerPipe";
 NamedPipeServer::NamedPipeServer(const std::string& comPort)
    : m_comPort(comPort)
 {
-   sp_get_port_by_name(comPort.c_str(), &m_serialPort);
-   if (m_serialPort)
+   // sp_get_port_by_name does NOT validate the device on Linux (it only copies
+   // the name; fd stays -1), so m_serialPort is non-null for any string. The
+   // real check is sp_open's return - previously ignored, so a bad/default port
+   // name (the class default "comm1", or a Windows "COMx") failed silently and
+   // every subsequent write vanished into a dead fd (root cause of vpinball #2962).
+   if (sp_get_port_by_name(comPort.c_str(), &m_serialPort) != SP_OK || !m_serialPort)
    {
-      sp_open(m_serialPort, SP_MODE_READ_WRITE);
-      sp_set_baudrate(m_serialPort, 2000000);
-      sp_set_bits(m_serialPort, 8);
-      sp_set_parity(m_serialPort, SP_PARITY_NONE);
-      sp_set_stopbits(m_serialPort, 1);
-      sp_set_rts(m_serialPort, SP_RTS_ON);
-      sp_set_dtr(m_serialPort, SP_DTR_ON);
+      Log::Warning(StringExtensions::Build(
+         "PinOne: serial port '{0}' not found (on Linux use /dev/ttyACM0, not COMx/comm1).", comPort));
+      m_serialPort = nullptr;
+      return;
    }
+
+   enum sp_return openResult = sp_open(m_serialPort, SP_MODE_READ_WRITE);
+   if (openResult != SP_OK)
+   {
+      char* errorMessage = sp_last_error_message();
+      Log::Warning(StringExtensions::Build(
+         "PinOne: could not open serial port '{0}' (rc={1}): {2}", comPort,
+         std::to_string(static_cast<int>(openResult)), errorMessage ? errorMessage : "unknown error"));
+      if (errorMessage)
+         sp_free_error_message(errorMessage);
+      sp_free_port(m_serialPort);
+      m_serialPort = nullptr;   // so the if(m_serialPort) write-guard correctly skips
+      return;
+   }
+
+   sp_set_baudrate(m_serialPort, 2000000);
+   sp_set_bits(m_serialPort, 8);
+   sp_set_parity(m_serialPort, SP_PARITY_NONE);
+   sp_set_stopbits(m_serialPort, 1);
+   sp_set_rts(m_serialPort, SP_RTS_ON);
+   sp_set_dtr(m_serialPort, SP_DTR_ON);
 }
 
 NamedPipeServer::~NamedPipeServer()
@@ -93,6 +117,14 @@ void NamedPipeServer::StartServer()
                close(serverSock);
                continue;
             }
+
+            // Bound the accept() wait so the loop periodically re-checks
+            // m_isRunning; otherwise StopServer()'s join() hangs forever on a
+            // server thread blocked in accept() with no incoming client.
+            struct timeval acceptTimeout;
+            acceptTimeout.tv_sec = 0;
+            acceptTimeout.tv_usec = 200000;
+            setsockopt(serverSock, SOL_SOCKET, SO_RCVTIMEO, &acceptTimeout, sizeof(acceptTimeout));
 
             int clientSock = accept(serverSock, nullptr, nullptr);
             if (clientSock >= 0)
@@ -170,7 +202,11 @@ void NamedPipeServer::HandleClientConnection(void* serverStream)
 
             if (m_serialPort)
             {
-               sp_blocking_write(m_serialPort, bytesToWrite.data(), bytesToWrite.size(), 500);
+               int written = sp_blocking_write(m_serialPort, bytesToWrite.data(), bytesToWrite.size(), 500);
+               if (written < static_cast<int>(bytesToWrite.size()))
+                  Log::Warning(StringExtensions::Build(
+                     "PinOne: serial write short/failed ({0} of {1} bytes)",
+                     std::to_string(written), std::to_string(static_cast<int>(bytesToWrite.size()))));
             }
 
             std::string response = "OK";
