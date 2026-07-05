@@ -30,19 +30,20 @@ void FT245RBitbangControllerAutoConfigurator::AutoConfig(Cabinet* cabinet)
       return;
    }
 
-   for (uint32_t i = 0; i < amountDevices; i++)
+   // Fill one properly-sized buffer in a single call and index each device by i,
+   // like the C# OpenByIndex(i) loop. The previous code passed a 1-element buffer
+   // per iteration (GetDeviceInfoList writes one node per device -> overflow with
+   // 2+ boards) and never used i (so every controller got device[0]'s serial).
+   std::vector<FTDI::FT_DEVICE_INFO_NODE> devInfos(amountDevices);
+   uint32_t numDevs = amountDevices;
+   FTDI* connectFTDI = new FTDI();
+   status = connectFTDI->GetDeviceInfoList(devInfos.data(), numDevs);
+   delete connectFTDI;
+
+   if (status == FTDI::FT_OK)
    {
-      FTDI* connectFTDI = new FTDI();
-
-      FTDI::FT_DEVICE_INFO_NODE devInfo;
-      uint32_t numDevs = 1;
-      status = connectFTDI->GetDeviceInfoList(&devInfo, numDevs);
-
-      if (status == FTDI::FT_OK && numDevs > 0)
-      {
-         deviceList.emplace_back(devInfo.SerialNumber, devInfo.Description);
-      }
-      delete connectFTDI;
+      for (uint32_t i = 0; i < numDevs && i < devInfos.size(); i++)
+         deviceList.emplace_back(devInfos[i].SerialNumber, devInfos[i].Description);
    }
 
    for (int deviceIndex = 0; deviceIndex < static_cast<int>(deviceList.size()); deviceIndex++)
