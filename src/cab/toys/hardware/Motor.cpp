@@ -40,6 +40,8 @@ void Motor::Finish()
 {
    if (m_alarmHandler != nullptr)
    {
+      m_alarmHandler->UnregisterAlarm(Action(this, &Motor::KickStartEnd));
+      m_alarmHandler->UnregisterAlarm(Action(this, &Motor::MaxRunTimeMotorStop));
       m_alarmHandler = nullptr;
    }
 
@@ -83,6 +85,7 @@ void Motor::UpdateOutputs()
 
                   if (m_alarmHandler != nullptr)
                   {
+                     m_alarmHandler->RegisterAlarm(m_kickstartDurationMs, Action(this, &Motor::KickStartEnd));
                   }
                }
             }
@@ -96,6 +99,7 @@ void Motor::UpdateOutputs()
 
             if (m_maxRunTimeMs > 0 && m_alarmHandler != nullptr)
             {
+               m_alarmHandler->RegisterAlarm(m_maxRunTimeMs, Action(this, &Motor::MaxRunTimeMotorStop));
             }
          }
       }
@@ -109,6 +113,8 @@ void Motor::UpdateOutputs()
          {
             if (m_alarmHandler != nullptr)
             {
+               m_alarmHandler->UnregisterAlarm(Action(this, &Motor::KickStartEnd));
+               m_alarmHandler->UnregisterAlarm(Action(this, &Motor::MaxRunTimeMotorStop));
             }
             m_targetMotorPower = 0;
             m_currentMotorPower = 0;
@@ -121,6 +127,8 @@ void Motor::UpdateOutputs()
          {
             if (m_alarmHandler != nullptr)
             {
+               m_alarmHandler->UnregisterAlarm(Action(this, &Motor::KickStartEnd));
+               m_alarmHandler->UnregisterAlarm(Action(this, &Motor::MaxRunTimeMotorStop));
             }
             m_targetMotorPower = 0;
             m_currentMotorPower = 0;
@@ -140,6 +148,7 @@ void Motor::MaxRunTimeMotorStop()
 {
    if (m_alarmHandler != nullptr)
    {
+      m_alarmHandler->UnregisterAlarm(Action(this, &Motor::KickStartEnd));
    }
 
    m_kickstartActive = false;
