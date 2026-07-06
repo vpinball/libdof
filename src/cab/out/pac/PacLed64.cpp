@@ -160,8 +160,9 @@ void PacLed64::OnOutputValueChanged(IOutput* output)
       return;
    }
 
-   PacLed64Unit* s = s_pacLed64Units[m_id];
-   s->UpdateValue(on);
+   auto it = s_pacLed64Units.find(m_id);
+   if (it != s_pacLed64Units.end())
+      it->second->UpdateValue(on);
 }
 
 tinyxml2::XMLElement* PacLed64::ToXml(tinyxml2::XMLDocument& doc) const
