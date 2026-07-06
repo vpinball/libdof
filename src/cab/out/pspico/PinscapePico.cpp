@@ -306,6 +306,9 @@ private:
 
 void PinscapePico::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
 {
+   if (!m_dev)
+      return;
+
    ContiguousOutputListGroup contiguousGroup;
    RandomAccessOutputListGroup randomGroup;
    int firstChangedIndex = -1;
