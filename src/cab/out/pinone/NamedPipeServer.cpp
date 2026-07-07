@@ -9,6 +9,7 @@
 #include <windows.h>
 #else
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <cstring>
@@ -22,28 +23,28 @@ const std::string NamedPipeServer::s_pipeName = "ComPortServerPipe";
 NamedPipeServer::NamedPipeServer(const std::string& comPort)
    : m_comPort(comPort)
 {
-   sp_get_port_by_name(comPort.c_str(), &m_serialPort);
-   if (m_serialPort)
+   if (sp_get_port_by_name(comPort.c_str(), &m_serialPort) != SP_OK || !m_serialPort)
    {
-      sp_open(m_serialPort, SP_MODE_READ_WRITE);
-      sp_set_baudrate(m_serialPort, 2000000);
-      sp_set_bits(m_serialPort, 8);
-      sp_set_parity(m_serialPort, SP_PARITY_NONE);
-      sp_set_stopbits(m_serialPort, 1);
-      sp_set_rts(m_serialPort, SP_RTS_ON);
-      sp_set_dtr(m_serialPort, SP_DTR_ON);
+      m_serialPort = nullptr;
+      throw std::runtime_error(StringExtensions::Build("Serial port {0} not found", comPort));
    }
+
+   if (sp_open(m_serialPort, SP_MODE_READ_WRITE) != SP_OK)
+   {
+      sp_free_port(m_serialPort);
+      m_serialPort = nullptr;
+      throw std::runtime_error(StringExtensions::Build("Could not open serial port {0}", comPort));
+   }
+
+   sp_set_baudrate(m_serialPort, 2000000);
+   sp_set_bits(m_serialPort, 8);
+   sp_set_parity(m_serialPort, SP_PARITY_NONE);
+   sp_set_stopbits(m_serialPort, 1);
+   sp_set_rts(m_serialPort, SP_RTS_ON);
+   sp_set_dtr(m_serialPort, SP_DTR_ON);
 }
 
-NamedPipeServer::~NamedPipeServer()
-{
-   StopServer();
-   if (m_serialPort)
-   {
-      sp_close(m_serialPort);
-      sp_free_port(m_serialPort);
-   }
-}
+NamedPipeServer::~NamedPipeServer() { StopServer(); }
 
 void NamedPipeServer::StartServer()
 {
@@ -94,7 +95,25 @@ void NamedPipeServer::StartServer()
                continue;
             }
 
-            int clientSock = accept(serverSock, nullptr, nullptr);
+            int clientSock = -1;
+            while (m_isRunning)
+            {
+               fd_set readFds;
+               FD_ZERO(&readFds);
+               FD_SET(serverSock, &readFds);
+               struct timeval timeout;
+               timeout.tv_sec = 0;
+               timeout.tv_usec = 200000;
+               int selectResult = select(serverSock + 1, &readFds, nullptr, nullptr, &timeout);
+               if (selectResult > 0)
+               {
+                  clientSock = accept(serverSock, nullptr, nullptr);
+                  break;
+               }
+               if (selectResult < 0)
+                  break;
+            }
+
             if (clientSock >= 0)
             {
                HandleClientConnection(reinterpret_cast<void*>(static_cast<intptr_t>(clientSock)));
@@ -129,6 +148,26 @@ void NamedPipeServer::HandleClientConnection(void* serverStream)
          bytesRead = static_cast<int>(dwBytesRead);
 #else
          int sock = static_cast<int>(reinterpret_cast<intptr_t>(serverStream));
+         bool readReady = false;
+         while (m_isRunning && !readReady)
+         {
+            fd_set readFds;
+            FD_ZERO(&readFds);
+            FD_SET(sock, &readFds);
+            struct timeval timeout;
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 200000;
+            int selectResult = select(sock + 1, &readFds, nullptr, nullptr, &timeout);
+            if (selectResult > 0)
+               readReady = true;
+            else if (selectResult < 0)
+               break;
+         }
+         if (!readReady)
+         {
+            break;
+         }
+
          bytesRead = static_cast<int>(read(sock, request.data(), request.size()));
          if (bytesRead <= 0)
          {
@@ -261,6 +300,8 @@ void NamedPipeServer::StopServer()
    if (m_serialPort)
    {
       sp_close(m_serialPort);
+      sp_free_port(m_serialPort);
+      m_serialPort = nullptr;
    }
 
    std::this_thread::sleep_for(std::chrono::milliseconds(300));
