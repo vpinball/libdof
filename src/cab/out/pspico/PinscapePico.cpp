@@ -117,7 +117,7 @@ void PinscapePico::ConnectToController()
          {
             m_dev = device;
             Log::Write(StringExtensions::Build("PinscapePico {0} connected successfully", GetName()));
-            m_oldOutputValues.resize(GetNumberOfOutputs(), 0);
+            m_oldOutputValues.assign(GetNumberOfOutputs(), 255);
             return;
          }
       }
