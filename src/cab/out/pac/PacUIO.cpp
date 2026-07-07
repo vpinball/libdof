@@ -13,7 +13,7 @@
 namespace DOF
 {
 
-std::vector<PacUIO::PacUIOUnit*> PacUIO::s_pacUIOUnits;
+std::map<int, PacUIO::PacUIOUnit*> PacUIO::s_pacUIOUnits;
 bool PacUIO::s_unitsInitialized = false;
 
 void PacUIO::InitializeUnits()
@@ -22,7 +22,7 @@ void PacUIO::InitializeUnits()
    {
       for (int i = 0; i <= 2; i++)
       {
-         s_pacUIOUnits.push_back(new PacUIOUnit(i));
+         s_pacUIOUnits[i] = new PacUIOUnit(i);
       }
       s_unitsInitialized = true;
    }
@@ -49,24 +49,22 @@ void PacUIO::SetId(int value)
 void PacUIO::Update()
 {
    InitializeUnits();
-   s_pacUIOUnits[m_id]->TriggerPacUIOUpdaterThread();
+   s_pacUIOUnits.at(m_id)->TriggerPacUIOUpdaterThread();
 }
 
 void PacUIO::Init(Cabinet* cabinet)
 {
    AddOutputs();
    InitializeUnits();
-   s_pacUIOUnits[m_id]->Init(cabinet);
+   s_pacUIOUnits.at(m_id)->Init(cabinet);
    Log::Write(StringExtensions::Build("PacUIO Id:{0} initialized and updater thread started.", std::to_string(m_id)));
 }
 
 void PacUIO::Finish()
 {
-   if (s_unitsInitialized && m_id >= 0 && m_id < static_cast<int>(s_pacUIOUnits.size()))
-   {
-      s_pacUIOUnits[m_id]->Finish();
-      s_pacUIOUnits[m_id]->ShutdownLighting();
-   }
+   InitializeUnits();
+   s_pacUIOUnits.at(m_id)->Finish();
+   s_pacUIOUnits.at(m_id)->ShutdownLighting();
    Log::Write(StringExtensions::Build("PacUIO Id:{0} finished and updater thread stopped.", std::to_string(m_id)));
 }
 
@@ -90,7 +88,7 @@ void PacUIO::AddOutputs()
          Output* newOutput = new Output();
          newOutput->SetName(StringExtensions::Build("{0}.{1:00}", GetName(), std::to_string(i)));
          newOutput->SetNumber(i);
-         outputs->push_back(newOutput);
+         outputs->Add(newOutput);
       }
    }
 }
@@ -107,7 +105,7 @@ void PacUIO::OnOutputValueChanged(IOutput* output)
    }
 
    InitializeUnits();
-   PacUIOUnit* s = s_pacUIOUnits[m_id];
+   PacUIOUnit* s = s_pacUIOUnits.at(m_id);
    s->UpdateValue(on);
 }
 
