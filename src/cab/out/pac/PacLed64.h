@@ -53,6 +53,8 @@ private:
    int m_fullUpdateThreshold;
 
    static std::map<int, PacLed64Unit*> s_pacLed64Units;
+   static bool s_unitsInitialized;
+   static void InitializeUnits();
 
    void AddOutputs();
 

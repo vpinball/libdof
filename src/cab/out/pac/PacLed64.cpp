@@ -18,6 +18,19 @@ namespace DOF
 {
 
 std::map<int, PacLed64::PacLed64Unit*> PacLed64::s_pacLed64Units;
+bool PacLed64::s_unitsInitialized = false;
+
+void PacLed64::InitializeUnits()
+{
+   if (!s_unitsInitialized)
+   {
+      for (int i = 1; i <= 4; i++)
+      {
+         s_pacLed64Units[i] = new PacLed64Unit(i);
+      }
+      s_unitsInitialized = true;
+   }
+}
 
 PacLed64::PacLed64()
    : m_id(-1)
@@ -39,8 +52,7 @@ void PacLed64::SetId(int value)
 {
    if (value < 1 || value > 4)
    {
-      Log::Exception(StringExtensions::Build("PacLed64 Ids must be between 1-4. The supplied Id {0} is out of range.", std::to_string(value)));
-      return;
+      throw std::runtime_error(StringExtensions::Build("PacLed64 Ids must be between 1-4. The supplied Id {0} is out of range.", std::to_string(value)));
    }
 
    std::lock_guard<std::mutex> lock(m_idUpdateLocker);
@@ -79,28 +91,10 @@ void PacLed64::Init(Cabinet* cabinet)
       }
    }
 
-   // Initialize static units map if needed
-   static bool initialized = false;
-   static std::mutex initMutex;
-   if (!initialized)
-   {
-      std::lock_guard<std::mutex> lock(initMutex);
-      if (!initialized)
-      {
-         for (int i = 1; i <= 4; i++)
-         {
-            s_pacLed64Units[i] = new PacLed64Unit(i);
-         }
-         initialized = true;
-      }
-   }
-
-   if (s_pacLed64Units.find(m_id) != s_pacLed64Units.end())
-   {
-      s_pacLed64Units[m_id]->SetFullUpdateThreshold(m_fullUpdateThreshold);
-      s_pacLed64Units[m_id]->SetMinUpdateInterval(std::chrono::milliseconds(m_minUpdateIntervalMs));
-      s_pacLed64Units[m_id]->Init(cabinet);
-   }
+   InitializeUnits();
+   s_pacLed64Units.at(m_id)->SetFullUpdateThreshold(m_fullUpdateThreshold);
+   s_pacLed64Units.at(m_id)->SetMinUpdateInterval(std::chrono::milliseconds(m_minUpdateIntervalMs));
+   s_pacLed64Units.at(m_id)->Init(cabinet);
 
    Log::Write(StringExtensions::Build("PacLed64 Id:{0} initialized and updater thread started.", std::to_string(m_id)));
 }
@@ -117,10 +111,8 @@ void PacLed64::Finish()
 
 void PacLed64::Update()
 {
-   if (s_pacLed64Units.find(m_id) != s_pacLed64Units.end())
-   {
-      s_pacLed64Units[m_id]->TriggerPacLed64UpdaterThread();
-   }
+   InitializeUnits();
+   s_pacLed64Units.at(m_id)->TriggerPacLed64UpdaterThread();
 }
 
 void PacLed64::AddOutputs()
@@ -160,9 +152,9 @@ void PacLed64::OnOutputValueChanged(IOutput* output)
       return;
    }
 
-   auto it = s_pacLed64Units.find(m_id);
-   if (it != s_pacLed64Units.end())
-      it->second->UpdateValue(on);
+   InitializeUnits();
+   PacLed64Unit* s = s_pacLed64Units.at(m_id);
+   s->UpdateValue(on);
 }
 
 tinyxml2::XMLElement* PacLed64::ToXml(tinyxml2::XMLDocument& doc) const
