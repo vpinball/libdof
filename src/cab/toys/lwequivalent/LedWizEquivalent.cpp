@@ -2,9 +2,6 @@
 #include "../../Cabinet.h"
 #include "../../CabinetOutputList.h"
 #include "../ToyList.h"
-#include "../../out/OutputControllerList.h"
-#include "../../out/IOutputController.h"
-#include "../../out/OutputControllerBase.h"
 #include "../../out/OutputList.h"
 #include "../../out/Output.h"
 #include "../../../Log.h"
@@ -172,9 +169,6 @@ void LedWizEquivalent::ResolveOutputs(Cabinet* cabinet)
       if (outputName.empty())
          continue;
 
-      // Resolve the same way the C# original does (Cabinet.Outputs[OutputName]).
-      // CabinetOutputList::GetByName understands the "{controller}\{output}" path
-      // form the auto-configurators emit, so hierarchical names resolve here too.
       CabinetOutputList* cabinetOutputs = cabinet->GetOutputs();
       IOutput* physicalOutput = cabinetOutputs != nullptr ? cabinetOutputs->GetByName(outputName) : nullptr;
 
