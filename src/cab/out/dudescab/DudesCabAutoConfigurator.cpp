@@ -55,7 +55,7 @@ void DudesCabAutoConfigurator::AutoConfig(Cabinet* cabinet)
                for (int outputIndex = 1; outputIndex <= device->NumOutputs(); outputIndex++)
                {
                   LedWizEquivalentOutput* lweo = new LedWizEquivalentOutput();
-                  lweo->SetOutputName(StringExtensions::Build("{0}.{1:00}", controllerName, std::to_string(outputIndex)));
+                  lweo->SetOutputName(StringExtensions::Build("{0}\\{0}.{1:00}", controllerName, std::to_string(outputIndex)));
                   lweo->SetLedWizEquivalentOutputNumber(outputIndex);
                   lwe->GetOutputs().AddOutput(lweo);
                }

@@ -84,7 +84,7 @@ void FT245RBitbangControllerAutoConfigurator::AutoConfig(Cabinet* cabinet)
             for (int outputIndex = 1; outputIndex <= 8; outputIndex++)
             {
                LedWizEquivalentOutput* lweo = new LedWizEquivalentOutput();
-               lweo->SetOutputName(StringExtensions::Build("{0}\\{1}.{2:00}", ftDevice->GetName(), ftDevice->GetName(), std::to_string(outputIndex)));
+               lweo->SetOutputName(StringExtensions::Build("{0}\\{0}.{1:00}", ftDevice->GetName(), std::to_string(outputIndex)));
                lweo->SetLedWizEquivalentOutputNumber(outputIndex);
                lwe->GetOutputs().AddOutput(lweo);
             }
