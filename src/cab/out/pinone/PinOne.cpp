@@ -159,19 +159,19 @@ void PinOne::ConnectToController()
          if (m_pinOneCommunication->CreateServer())
          {
             if (!m_pinOneCommunication->ConnectToServer())
-               throw std::runtime_error(StringExtensions::Build("Unable to connect to PinOne on comport {0} after server creation", m_comPort));
+               throw std::runtime_error("Unable to connect to server after new creation");
          }
          else
          {
-            throw std::runtime_error(StringExtensions::Build("Unable to create PinOne server for comport {0}", m_comPort));
+            throw std::runtime_error("Unable to create server");
          }
       }
    }
    catch (const std::exception& e)
    {
-      std::string msg = StringExtensions::Build("A exception occurred while opening comport {0} for {1}.", m_comPort, GetName());
-      Log::Warning(msg);
-      throw;
+      std::string msg = StringExtensions::Build("A exception occurred while opening comport {2} for {0} {1}.", "PinOne", GetName(), m_comPort);
+      Log::Exception(StringExtensions::Build("{0}: {1}", msg, e.what()));
+      throw std::runtime_error(msg);
    }
 }
 
