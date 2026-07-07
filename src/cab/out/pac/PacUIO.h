@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../OutputControllerBase.h"
-#include <vector>
+#include <map>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -91,7 +91,7 @@ private:
       void OnPacRemoved(int index);
    };
 
-   static std::vector<PacUIOUnit*> s_pacUIOUnits;
+   static std::map<int, PacUIOUnit*> s_pacUIOUnits;
    static bool s_unitsInitialized;
    static void InitializeUnits();
 };
