@@ -26,10 +26,9 @@ public:
    void Init(Pinball* pPinball);
    void Finish();
 
-   void RegisterAlarm(int durationMs, AlarmCallback alarmHandler, bool dontUnregister = false);
+   void RegisterAlarm(int durationMs, AlarmCallback alarmHandler, bool doNotUnregister = false);
    void UnregisterAlarm(AlarmCallback alarmHandler);
-   void RegisterAlarm(int durationMs, AlarmCallback alarmHandler, void* parameter, bool dontUnregister = false);
-   void UnregisterAlarm(AlarmCallback alarmHandler, void* parameter);
+   void RegisterAlarm(int durationMs, AlarmCallback alarmHandler, void* parameter, bool doNotUnregister = false);
 
    void RegisterIntervalAlarm(int intervalMs, AlarmCallback intervalAlarmHandler);
    void UnregisterIntervalAlarm(AlarmCallback intervalAlarmHandler);
@@ -43,23 +42,20 @@ private:
       AlarmCallback alarmHandler;
       void* parameter;
       bool hasParameter;
-      bool dontUnregister;
 
-      AlarmSetting(TimePoint time, AlarmCallback handler, bool dontUnreg = false)
+      AlarmSetting(TimePoint time, AlarmCallback handler)
          : alarmTime(time)
          , alarmHandler(handler)
          , parameter(nullptr)
          , hasParameter(false)
-         , dontUnregister(dontUnreg)
       {
       }
 
-      AlarmSetting(TimePoint time, AlarmCallback handler, void* param, bool dontUnreg = false)
+      AlarmSetting(TimePoint time, AlarmCallback handler, void* param)
          : alarmTime(time)
          , alarmHandler(handler)
          , parameter(param)
          , hasParameter(true)
-         , dontUnregister(dontUnreg)
       {
       }
 
