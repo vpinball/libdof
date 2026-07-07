@@ -67,7 +67,7 @@ void PacLed64AutoConfigurator::AutoConfig(Cabinet* cabinet)
                for (int i = 1; i <= 64; i++)
                {
                   LedWizEquivalentOutput* lweo = new LedWizEquivalentOutput();
-                  lweo->SetOutputName(StringExtensions::Build("{0}.{1:00}", pacLed->GetName(), std::to_string(i)));
+                  lweo->SetOutputName(StringExtensions::Build("{0}\\{0}.{1:00}", pacLed->GetName(), std::to_string(i)));
                   lweo->SetLedWizEquivalentOutputNumber(i);
                   lwe->GetOutputs().AddOutput(lweo);
                }

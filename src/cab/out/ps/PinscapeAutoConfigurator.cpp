@@ -65,7 +65,7 @@ void PinscapeAutoConfigurator::AutoConfig(Cabinet* cabinet)
                for (int i = 1; i <= p->GetNumberOfOutputs(); i++)
                {
                   auto output = new LedWizEquivalentOutput();
-                  output->SetOutputName(StringExtensions::Build("{0}.{1:00}", p->GetName(), std::to_string(i)));
+                  output->SetOutputName(StringExtensions::Build("{0}\\{0}.{1:00}", p->GetName(), std::to_string(i)));
                   output->SetLedWizEquivalentOutputNumber(i);
                   lwe->GetOutputs().AddOutput(output);
                }
