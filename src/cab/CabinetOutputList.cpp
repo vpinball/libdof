@@ -43,25 +43,22 @@ const IOutput* CabinetOutputList::GetByName(const std::string& name) const
    if (dotParts.size() == 2)
    {
       OutputControllerList* controllers = GetOutputControllers();
-      if (controllers && controllers->Contains(dotParts[0]))
+      int nr = 0;
+      if (controllers && controllers->Contains(dotParts[0]) && StringExtensions::TryParseInt(dotParts[1], nr))
       {
-         try
+         for (IOutputController* controller : *controllers)
          {
-            int number = std::stoi(dotParts[1]);
-            for (IOutputController* controller : *controllers)
+            if (controller && controller->GetName() == dotParts[0])
             {
-               if (controller && controller->GetName() == dotParts[0])
+               const OutputList* outputs = controller->GetOutputs();
+               if (outputs)
                {
-                  const OutputList* outputs = controller->GetOutputs();
-                  if (outputs)
-                  {
-                     return outputs->FindByNumber(number);
-                  }
+                  const IOutput* o = outputs->FindByNumber(nr);
+                  if (o != nullptr)
+                     return o;
                }
+               break;
             }
-         }
-         catch (const std::exception&)
-         {
          }
       }
    }

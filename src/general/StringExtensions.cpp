@@ -239,9 +239,19 @@ std::string StringExtensions::GetFileNameWithoutExtension(const std::string& ful
 
 bool StringExtensions::TryParseInt(const std::string& str, int& value)
 {
-   if (str.empty())
+   std::string s = Trim(str);
+   if (s.empty())
       return false;
-   return (std::from_chars(str.c_str(), str.c_str() + str.length(), value).ec == std::errc { });
+   const char* first = s.c_str();
+   const char* last = s.c_str() + s.length();
+   if (*first == '+')
+   {
+      ++first;
+      if (first == last || *first == '-' || *first == '+')
+         return false;
+   }
+   std::from_chars_result result = std::from_chars(first, last, value);
+   return result.ec == std::errc { } && result.ptr == last;
 }
 
 bool StringExtensions::IsHexString(const std::string& s)
