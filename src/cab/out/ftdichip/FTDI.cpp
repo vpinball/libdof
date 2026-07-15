@@ -78,10 +78,11 @@ FTDI::FT_STATUS FTDI::GetDeviceInfoList(FT_DEVICE_INFO_NODE* devinfo, uint32_t& 
       return ConvertLibftdiError(result);
    }
 
-   numdevs = static_cast<uint32_t>(result);
+   const uint32_t capacity = numdevs;         // caller's buffer size (IN)
+   numdevs = static_cast<uint32_t>(result);   // total devices found (OUT)
 
    struct ftdi_device_list* curdev = devlist;
-   for (uint32_t i = 0; i < numdevs && curdev; ++i, curdev = curdev->next)
+   for (uint32_t i = 0; i < numdevs && i < capacity && curdev; ++i, curdev = curdev->next)
    {
       char manufacturer[256] = { 0 };
       char description[256] = { 0 };
