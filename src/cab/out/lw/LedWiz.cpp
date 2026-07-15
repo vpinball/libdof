@@ -269,7 +269,7 @@ void LedWiz::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
          int byteIndex = 2 + (i / 8);
          int bitIndex = i % 8;
 
-         if (newOutputValues[i] > 127)
+         if (newOutputValues[i] > 0)
          {
             sbaCmd[byteIndex] |= (1 << bitIndex);
          }
