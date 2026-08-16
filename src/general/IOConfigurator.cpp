@@ -9,6 +9,10 @@
 #include "../cab/out/pspico/PinscapePico.h"
 #endif
 
+#ifdef __LIBUSB__
+#include "../cab/out/pac/PacDriveSingleton.h"
+#endif
+
 #include <string>
 
 namespace DOF
@@ -33,12 +37,18 @@ void IOConfigurator::Initialize()
          s_libusbContext = nullptr;
       }
    }
+
+   PacDriveSingleton::ReacquireContext();
 #endif
 }
 
 void IOConfigurator::Shutdown()
 {
 #ifdef __LIBUSB__
+   // PacDriveSingleton is static, so its destructor runs at process exit - long after
+   // libusb_exit() below frees the context its handles point into. Close them first.
+   PacDriveSingleton::ClearDevices();
+
    if (s_libusbContext != nullptr)
    {
       libusb_exit(s_libusbContext);

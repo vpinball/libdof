@@ -6,20 +6,41 @@
 namespace DOF
 {
 
+PacDriveSingleton* PacDriveSingleton::s_pInstance = nullptr;
+
 PacDriveSingleton& PacDriveSingleton::GetInstance()
 {
    static PacDriveSingleton instance;
    return instance;
 }
 
+void PacDriveSingleton::ClearDevices()
+{
+   if (s_pInstance)
+      s_pInstance->Shutdown();
+}
+
+void PacDriveSingleton::ReacquireContext()
+{
+   // The singleton outlives any one DOF, and Shutdown() dropped its context and device
+   // list. Re-enumerate, or a later DOF silently finds no Pac devices.
+   if (s_pInstance)
+      s_pInstance->Initialize();
+}
+
 PacDriveSingleton::PacDriveSingleton()
    : m_numDevices(0)
    , m_usbContext(nullptr)
 {
+   s_pInstance = this;
    Initialize();
 }
 
-PacDriveSingleton::~PacDriveSingleton() { Shutdown(); }
+PacDriveSingleton::~PacDriveSingleton()
+{
+   Shutdown();
+   s_pInstance = nullptr;
+}
 
 void PacDriveSingleton::Initialize()
 {

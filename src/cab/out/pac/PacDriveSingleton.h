@@ -34,6 +34,8 @@ public:
    };
 
    static PacDriveSingleton& GetInstance();
+   static void ClearDevices();
+   static void ReacquireContext();
 
    std::vector<int> PacLed64GetIdList();
    int PacLed64GetIndexForDeviceId(int id);
@@ -80,6 +82,7 @@ private:
    int m_numDevices;
 
    libusb_context* m_usbContext;
+   static PacDriveSingleton* s_pInstance;
    std::map<int, libusb_device_handle*> m_usbDevices;
    std::mutex m_usbDevicesMutex;
 
