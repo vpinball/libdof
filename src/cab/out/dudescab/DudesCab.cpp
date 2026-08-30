@@ -87,7 +87,10 @@ void DudesCab::Init(Cabinet* cabinet)
 void DudesCab::Finish()
 {
    if (m_dev)
+   {
       m_dev->AllOff();
+      m_dev = nullptr;
+   }
    OutputControllerFlexCompleteBase::Finish();
 }
 
