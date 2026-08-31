@@ -1,5 +1,5 @@
 #include "PacDriveSingleton.h"
-#include "../../../general/IOConfigurator.h"
+#include "../../../Log.h"
 #include "../../../general/StringExtensions.h"
 #include <string>
 
@@ -23,7 +23,13 @@ PacDriveSingleton::~PacDriveSingleton() { Shutdown(); }
 
 void PacDriveSingleton::Initialize()
 {
-   m_usbContext = IOConfigurator::GetUSBContext();
+   int result = libusb_init(&m_usbContext);
+   if (result < 0)
+   {
+      Log::Exception(StringExtensions::Build("Failed to initialize libusb: {0}", std::to_string(result)));
+      m_usbContext = nullptr;
+   }
+
    EnumerateDevices();
 }
 
@@ -49,7 +55,12 @@ void PacDriveSingleton::Shutdown()
          }
       }
       m_usbDevices.clear();
-      m_usbContext = nullptr;
+
+      if (m_usbContext)
+      {
+         libusb_exit(m_usbContext);
+         m_usbContext = nullptr;
+      }
    }
 }
 
