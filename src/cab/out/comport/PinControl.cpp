@@ -14,17 +14,7 @@ PinControl::PinControl()
 {
 }
 
-PinControl::~PinControl() { Finish(); }
-
-void PinControl::Init(Cabinet* cabinet) { OutputControllerCompleteBase::Init(cabinet); }
-
-void PinControl::Finish()
-{
-   DisconnectFromController();
-   delete[] m_oldValues;
-   m_oldValues = nullptr;
-   OutputControllerCompleteBase::Finish();
-}
+PinControl::~PinControl() { }
 
 int PinControl::GetNumberOfConfiguredOutputs() { return 7 + 3; }
 
