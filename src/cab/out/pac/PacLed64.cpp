@@ -46,7 +46,7 @@ PacLed64::PacLed64(int id)
    SetId(id);
 }
 
-PacLed64::~PacLed64() { Finish(); }
+PacLed64::~PacLed64() { }
 
 void PacLed64::SetId(int value)
 {
@@ -215,7 +215,7 @@ PacLed64::PacLed64Unit::PacLed64Unit(int id)
    std::fill(m_lastValueSent.begin(), m_lastValueSent.end(), 255);
 }
 
-PacLed64::PacLed64Unit::~PacLed64Unit() { Finish(); }
+PacLed64::PacLed64Unit::~PacLed64Unit() { }
 
 void PacLed64::PacLed64Unit::Init(Cabinet* cabinet)
 {

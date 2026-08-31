@@ -157,13 +157,7 @@ PacUIO::PacUIOUnit::PacUIOUnit(int id)
    InitUnit();
 }
 
-PacUIO::PacUIOUnit::~PacUIOUnit()
-{
-   if (m_keepPacUIOUpdaterAlive.load())
-   {
-      Finish();
-   }
-}
+PacUIO::PacUIOUnit::~PacUIOUnit() { }
 
 void PacUIO::PacUIOUnit::Init(Cabinet* cabinet) { StartPacUIOUpdaterThread(); }
 
