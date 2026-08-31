@@ -42,7 +42,7 @@ DudesCab::DudesCab(int number)
    SetNumber(number);
 }
 
-DudesCab::~DudesCab() { Finish(); }
+DudesCab::~DudesCab() { }
 
 void DudesCab::SetNumber(int value)
 {
@@ -84,12 +84,7 @@ void DudesCab::Init(Cabinet* cabinet)
    OutputControllerFlexCompleteBase::Init(cabinet);
 }
 
-void DudesCab::Finish()
-{
-   if (m_dev)
-      m_dev->AllOff();
-   OutputControllerFlexCompleteBase::Finish();
-}
+void DudesCab::Finish() { OutputControllerFlexCompleteBase::Finish(); }
 
 bool DudesCab::VerifySettings() { return true; }
 
