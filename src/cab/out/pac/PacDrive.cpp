@@ -17,7 +17,7 @@ PacDrive::PacDriveUnit* PacDrive::s_pacDriveInstance = nullptr;
 
 PacDrive::PacDrive() { SetName("PacDrive"); }
 
-PacDrive::~PacDrive() { Finish(); }
+PacDrive::~PacDrive() { }
 
 void PacDrive::Init(Cabinet* cabinet)
 {
@@ -124,7 +124,7 @@ PacDrive::PacDriveUnit::PacDriveUnit()
 {
 }
 
-PacDrive::PacDriveUnit::~PacDriveUnit() { Finish(); }
+PacDrive::PacDriveUnit::~PacDriveUnit() { }
 
 void PacDrive::PacDriveUnit::Init(Cabinet* cabinet)
 {
