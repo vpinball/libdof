@@ -27,7 +27,7 @@ FT245RBitbangController::FT245RBitbangController()
    SetOutputs(new OutputList());
 }
 
-FT245RBitbangController::~FT245RBitbangController() { Finish(); }
+FT245RBitbangController::~FT245RBitbangController() { }
 
 void FT245RBitbangController::SetId(int value)
 {

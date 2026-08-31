@@ -19,9 +19,6 @@ public:
    const std::string& GetComPort() const { return m_comPort; }
    void SetComPort(const std::string& value) { m_comPort = value; }
 
-   virtual void Init(Cabinet* cabinet) override;
-   virtual void Finish() override;
-
    virtual std::string GetXmlElementName() const override { return "PinControl"; }
    virtual tinyxml2::XMLElement* ToXml(tinyxml2::XMLDocument& doc) const override;
    virtual bool FromXml(const tinyxml2::XMLElement* element) override;
