@@ -15,6 +15,7 @@ class Cabinet;
 class Table;
 class AlarmHandler;
 class GlobalConfig;
+class LedControlConfigList;
 class InputQueue;
 class TableElementData;
 
@@ -31,7 +32,7 @@ public:
    AlarmHandler* GetAlarms() { return m_alarms; }
    GlobalConfig* GetGlobalConfig() { return m_globalConfig; }
    const GlobalConfig* GetGlobalConfig() const { return m_globalConfig; }
-   void Setup(const std::string& globalConfigFileName = "", const std::string& tableFilename = "", const std::string& romName = "");
+   void Setup(const std::string& globalConfigFileName = "", const std::string& tableFilename = "", const std::string& romName = "", LedControlConfigList* ledControlConfigs = nullptr);
    void Init();
    void Finish();
    void MainThreadSignal();

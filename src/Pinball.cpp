@@ -47,7 +47,7 @@ Pinball::~Pinball()
    delete m_inputQueue;
 }
 
-void Pinball::Setup(const std::string& globalConfigFileName, const std::string& tableFilename, const std::string& romName)
+void Pinball::Setup(const std::string& globalConfigFileName, const std::string& tableFilename, const std::string& romName, LedControlConfigList* ledControlConfigs)
 {
    bool globalConfigLoaded = true;
 
@@ -230,13 +230,18 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
          {
             Log::Write(StringExtensions::Build("Will try to load configs from DirectOutput.ini or LedControl.ini file(s) for RomName {0}", romName));
 
-            std::unordered_map<int, FileInfo> ledControlIniFiles = m_globalConfig->GetIniFilesDictionary(tableFilename);
-
-            LedControlConfigList* l = new LedControlConfigList();
-            if (ledControlIniFiles.size() > 0)
+            LedControlConfigList* l = ledControlConfigs;
+            if (!l)
             {
-               l->LoadLedControlFiles(ledControlIniFiles, false);
-               Log::Write(StringExtensions::Build("{0} directoutputconfig.ini or ledcontrol.ini files loaded.", std::to_string(ledControlIniFiles.size())));
+               std::unordered_map<int, FileInfo> ledControlIniFiles = m_globalConfig->GetIniFilesDictionary(tableFilename);
+
+               l = new LedControlConfigList();
+               if (ledControlIniFiles.size() > 0)
+                  l->LoadLedControlFiles(ledControlIniFiles, false);
+            }
+            if (l->size() > 0)
+            {
+               Log::Write(StringExtensions::Build("{0} directoutputconfig.ini or ledcontrol.ini files loaded.", std::to_string(l->size())));
             }
             else
             {
@@ -283,7 +288,8 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
                   }
                }
             }
-            delete l;
+            if (!ledControlConfigs)
+               delete l;
          }
          else
          {

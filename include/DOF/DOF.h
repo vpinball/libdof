@@ -1,8 +1,8 @@
 #pragma once
 
 #define LIBDOF_VERSION_MAJOR 0 // X Digits
-#define LIBDOF_VERSION_MINOR 4 // Max 2 Digits
-#define LIBDOF_VERSION_PATCH 7 // Max 2 Digits
+#define LIBDOF_VERSION_MINOR 5 // Max 2 Digits
+#define LIBDOF_VERSION_PATCH 0 // Max 2 Digits
 
 #define _LIBDOF_STR(x) #x
 #define LIBDOF_STR(x) _LIBDOF_STR(x)
@@ -26,6 +26,7 @@
 #include <shared_mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "Config.h"
 
@@ -59,6 +60,7 @@ namespace DOF
 {
 
 class Pinball;
+class LedControlConfigList;
 
 class LIBDOFAPI DOF
 {
@@ -70,8 +72,12 @@ public:
    void DataReceive(char type, int number, int value);
    void Finish();
 
+   std::vector<std::string> GetLedControlRomNames(const char* tableFilename);
+
 private:
    Pinball* m_pinball;
+   LedControlConfigList* m_ledControlConfigs;
+   std::string m_ledControlTableFilename;
 };
 
 } // namespace DOF

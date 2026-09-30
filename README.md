@@ -75,6 +75,11 @@ void test()
    pConfig->SetBasePath("/Users/jmillard/Library/Application Support/VPinballX/10.8/");
 
    DOF::DOF* pDof = new DOF::DOF();
+
+   std::vector<std::string> romNames = pDof->GetLedControlRomNames("");
+   if (std::find(romNames.begin(), romNames.end(), "ij_l7") == romNames.end())
+      printf("No ledcontrol config for ij_l7\n");
+
    pDof->Init("", "ij_l7");
    .
    .
