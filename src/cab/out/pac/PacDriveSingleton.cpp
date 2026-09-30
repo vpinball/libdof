@@ -9,11 +9,14 @@ namespace DOF
 PacDriveSingleton& PacDriveSingleton::GetInstance()
 {
    static PacDriveSingleton instance;
+   if (!instance.m_initialized)
+      instance.Initialize();
    return instance;
 }
 
 PacDriveSingleton::PacDriveSingleton()
    : m_numDevices(0)
+   , m_initialized(false)
    , m_usbContext(nullptr)
 {
    Initialize();
@@ -23,6 +26,8 @@ PacDriveSingleton::~PacDriveSingleton() { Shutdown(); }
 
 void PacDriveSingleton::Initialize()
 {
+   m_initialized = true;
+
    int result = libusb_init(&m_usbContext);
    if (result < 0)
    {
@@ -35,6 +40,8 @@ void PacDriveSingleton::Initialize()
 
 void PacDriveSingleton::Shutdown()
 {
+   m_initialized = false;
+
    std::lock_guard<std::mutex> lock(m_hidDevicesMutex);
    for (auto& pair : m_hidDevices)
    {

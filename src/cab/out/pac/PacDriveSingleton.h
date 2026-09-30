@@ -78,6 +78,7 @@ private:
    std::map<int, hid_device*> m_hidDevices;
    std::mutex m_hidDevicesMutex;
    int m_numDevices;
+   bool m_initialized;
 
    libusb_context* m_usbContext;
    std::map<int, libusb_device_handle*> m_usbDevices;

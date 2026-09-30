@@ -5,6 +5,9 @@
 #include "../cab/out/ps/Pinscape.h"
 #include "../cab/out/pspico/PinscapePico.h"
 #endif
+#ifdef __LIBUSB__
+#include "../cab/out/pac/PacDriveSingleton.h"
+#endif
 
 #include <string>
 
@@ -20,6 +23,9 @@ void IOConfigurator::Initialize()
 
 void IOConfigurator::Shutdown()
 {
+#ifdef __LIBUSB__
+   PacDriveSingleton::GetInstance().Shutdown();
+#endif
 #ifdef __HIDAPI__
    Pinscape::ClearDevices();
    PinscapePico::ClearDevices();
