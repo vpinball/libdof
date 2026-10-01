@@ -60,7 +60,6 @@ namespace DOF
 {
 
 class Pinball;
-class LedControlConfigList;
 
 class LIBDOFAPI DOF
 {
@@ -76,8 +75,6 @@ public:
 
 private:
    Pinball* m_pinball;
-   LedControlConfigList* m_ledControlConfigs;
-   std::string m_ledControlTableFilename;
 };
 
 } // namespace DOF

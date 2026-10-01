@@ -64,7 +64,7 @@ bool TableConfigList::Contains(const std::string& romName) const
 {
    for (const TableConfig* tc : m_configs)
    {
-      if (StringExtensions::ToLower(tc->GetShortRomName()) == StringExtensions::ToLower(romName))
+      if (StringExtensions::EqualsIgnoreCase(tc->GetShortRomName(), romName))
          return true;
    }
    return false;
