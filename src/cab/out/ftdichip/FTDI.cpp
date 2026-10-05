@@ -114,7 +114,7 @@ FTDI::FT_STATUS FTDI::OpenEx(const std::string& identifier, FT_OPEN_BY dwFlags)
 
    switch (dwFlags)
    {
-   case FT_OPEN_BY_SERIAL_NUMBER: result = ftdi_usb_open_string(m_ftdiContext, ("s:" + identifier).c_str()); break;
+   case FT_OPEN_BY_SERIAL_NUMBER: result = ftdi_usb_open_desc(m_ftdiContext, 0x0403, 0x6001, nullptr, identifier.c_str()); break;
    case FT_OPEN_BY_DESCRIPTION: result = ftdi_usb_open_string(m_ftdiContext, ("d:" + identifier).c_str()); break;
    default: return FT_INVALID_PARAMETER;
    }

@@ -7,6 +7,7 @@ option(BUILD_SHARED "Option to build shared library" ON)
 option(BUILD_STATIC "Option to build static library" ON)
 option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan for Debug builds" OFF)
 option(POST_BUILD_COPY_EXT_LIBS "Option to copy external libraries to build directory" ON)
+option(BUILD_FTDI_SERIAL_TEST "Build FTDI serial regression test without USB access" OFF)
 
 message(STATUS "PLATFORM: ${PLATFORM}")
 message(STATUS "ARCH: ${ARCH}")
@@ -283,6 +284,17 @@ set(LIBDOF_INCLUDE_DIRS
    ${CMAKE_CURRENT_SOURCE_DIR}/include
    third-party/include
 )
+
+if(BUILD_FTDI_SERIAL_TEST)
+   enable_testing()
+   add_executable(ftdi_serial_test
+      src/tools/ftdi_serial_test.cpp
+      src/cab/out/ftdichip/FTDI.cpp
+      src/general/StringExtensions.cpp
+   )
+   target_include_directories(ftdi_serial_test PRIVATE ${LIBDOF_INCLUDE_DIRS})
+   add_test(NAME ftdi_serial_test COMMAND ftdi_serial_test)
+endif()
 
 if(BUILD_SHARED)
    add_library(dof_shared SHARED ${LIBDOF_SOURCES})
