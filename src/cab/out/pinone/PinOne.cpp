@@ -25,6 +25,8 @@ PinOne::PinOne(const std::string& comPort)
 
 PinOne::~PinOne()
 {
+   FinishUpdaterThread();
+   std::lock_guard<std::recursive_mutex> lock(m_portLocker);
    if (m_pinOneCommunication)
    {
       delete m_pinOneCommunication;

@@ -32,6 +32,7 @@ public:
    std::string GetCOMPort();
 
 private:
+   void CloseClient();
    void SendPipeMessage(const std::string& message);
    std::string ReadMessage();
 };

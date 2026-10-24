@@ -29,6 +29,7 @@ PinOneCommunication::~PinOneCommunication()
 {
    try
    {
+      CloseClient();
       if (m_server)
       {
          m_server->StopServer();
@@ -118,6 +119,7 @@ bool PinOneCommunication::ConnectToServer()
 bool PinOneCommunication::DisconnectFromServer()
 {
    Disconnect();
+   CloseClient();
    if (m_server)
    {
       m_server->StopServer();
@@ -155,6 +157,18 @@ bool PinOneCommunication::IsComPortConnected()
 }
 
 void PinOneCommunication::Disconnect() { SendPipeMessage("DISCONNECT"); }
+
+void PinOneCommunication::CloseClient()
+{
+   if (!m_pipeClient)
+      return;
+#ifdef _WIN32
+   CloseHandle(static_cast<HANDLE>(m_pipeClient));
+#else
+   close(static_cast<int>(reinterpret_cast<intptr_t>(m_pipeClient)));
+#endif
+   m_pipeClient = nullptr;
+}
 
 void PinOneCommunication::Write(const std::vector<uint8_t>& bytesToWrite)
 {

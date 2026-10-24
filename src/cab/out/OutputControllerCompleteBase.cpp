@@ -242,13 +242,9 @@ void OutputControllerCompleteBase::FinishUpdaterThread()
          std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
 
-      if (m_updaterThreadFinished)
-         m_updaterThread->join();
-      else
-      {
-         Log::Warning("Updater thread did not quit within timeout. Thread termination may be forceful.");
-         m_updaterThread->detach();
-      }
+      if (!m_updaterThreadFinished)
+         Log::Warning("Updater thread did not quit within timeout. Waiting for it to finish.");
+      m_updaterThread->join();
       m_updaterThread.reset();
    }
 }

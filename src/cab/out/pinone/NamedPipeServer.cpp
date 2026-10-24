@@ -124,6 +124,7 @@ void NamedPipeServer::StartServer()
             unlink(sockPath.c_str());
 #endif
          }
+         m_serverThreadDone = true;
       });
 }
 
@@ -291,9 +292,19 @@ void NamedPipeServer::HandleClientConnection(void* serverStream)
 
 void NamedPipeServer::StopServer()
 {
-   m_isRunning = false;
+   bool wasRunning = m_isRunning.exchange(false);
    if (m_serverThread.joinable())
    {
+#ifdef _WIN32
+      std::string pipePath = "\\\\.\\pipe\\" + s_pipeName;
+      while (!m_serverThreadDone)
+      {
+         HANDLE pipe = CreateFileA(pipePath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+         if (pipe != INVALID_HANDLE_VALUE)
+            CloseHandle(pipe);
+         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+#endif
       m_serverThread.join();
    }
 
@@ -304,7 +315,8 @@ void NamedPipeServer::StopServer()
       m_serialPort = nullptr;
    }
 
-   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+   if (wasRunning)
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
 }
 
 }
