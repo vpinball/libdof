@@ -39,7 +39,7 @@ void WemosD1MPStripController::SetupController()
             if (result < 0)
                throw std::runtime_error(StringExtensions::Build("Failed to write ledstrip resize command: {0}", sp_last_error_message()));
 
-            receiveData.resize(1);
+            receiveData = std::vector<uint8_t>(1);
             bytesRead = -1;
 
             try
@@ -75,7 +75,7 @@ void WemosD1MPStripController::SetupController()
 
       std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-      receiveData.resize(1);
+      receiveData = std::vector<uint8_t>(1);
       bytesRead = -1;
 
       try

@@ -4,6 +4,7 @@
 #include "../DirectOutputHandler.h"
 #include "../general/FileReader.h"
 #include "../general/DirectoryInfo.h"
+#include "../general/Path.h"
 #include "../general/StringExtensions.h"
 
 #include <tinyxml2/tinyxml2.h>
@@ -177,14 +178,17 @@ FileInfo* GlobalConfig::GetShapeDefinitionFile(const std::string& tableFilename,
    std::unordered_map<int, FileInfo> iniFilesDict = GetIniFilesDictionary(tableFilename);
    if (iniFilesDict.size() > 0)
    {
-      auto [firstKey, firstValue] = *iniFilesDict.begin();
-      FileInfo* fi = new FileInfo(firstValue.Directory().FullName() + PATH_SEPARATOR_CHAR + "DirectOutputShapes.xml");
+      std::string iniFileDir = iniFilesDict.begin()->second.Directory().FullName();
+      FileInfo* fi = new FileInfo(Path::Combine(iniFileDir, "DirectOutputShapes.xml"));
       if (fi->Exists())
          return fi;
+      delete fi;
    }
-   FileInfo* fii = FilePattern(std::string("{DllDir}") + PATH_SEPARATOR_CHAR + "DirectOutputShapes.xml").GetFirstMatchingFile(GetReplaceValuesDictionary(tableFilename, romName));
+   std::string filePat = Path::Combine("{DllDir}", "DirectOutputShapes.xml");
+   FileInfo* fii = FilePattern(filePat).GetFirstMatchingFile(GetReplaceValuesDictionary(tableFilename, romName));
    if (fii != nullptr && fii->Exists())
       return fii;
+   delete fii;
 
    return nullptr;
 }
@@ -317,7 +321,7 @@ std::unordered_map<std::string, std::string> GlobalConfig::GetReplaceValuesDicti
          d.emplace("TableDirectoryName", tableDir.Name());
          d.emplace("TableDirName", tableDir.Name());
       }
-      d.emplace("TableName", StringExtensions::GetFileNameWithoutExtension(fi.FullName()));
+      d.emplace("TableName", Path::GetFileNameWithoutExtension(fi.FullName()));
    }
 
    if (!StringExtensions::IsNullOrWhiteSpace(romName))
@@ -384,15 +388,15 @@ void GlobalConfig::SaveGlobalConfig(const std::string& globalConfigFilename)
    if (StringExtensions::IsNullOrWhiteSpace(gcFileName))
       throw std::runtime_error("No filename for GlobalConfig file has been supplied. Looking up the filename from the property GlobalConfigFilename failed as well");
 
-   std::filesystem::path p(gcFileName);
-   if (std::filesystem::exists(p))
+   if (FileInfo(gcFileName).Exists())
    {
       auto now = std::chrono::system_clock::now();
       auto t = std::chrono::system_clock::to_time_t(now);
       std::ostringstream ts;
       ts << std::put_time(std::localtime(&t), "%Y-%m-%d %H-%M-%S");
-      std::string backupName = p.stem().string() + " old (replaced " + ts.str() + ")" + p.extension().string();
-      std::filesystem::copy_file(p, p.parent_path() / backupName);
+      std::filesystem::copy_file(gcFileName,
+         Path::Combine(Path::GetDirectoryName(gcFileName),
+            StringExtensions::Build("{1} old (replaced {0}){2}", ts.str(), Path::GetFileNameWithoutExtension(gcFileName), Path::GetExtension(gcFileName))));
    }
 
    DirectoryInfo gcDirectory = FileInfo(gcFileName).Directory();

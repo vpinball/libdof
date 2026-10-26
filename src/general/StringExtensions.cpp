@@ -252,8 +252,6 @@ std::string StringExtensions::Build(const std::string& format, const std::vector
    return result;
 }
 
-std::string StringExtensions::GetFileNameWithoutExtension(const std::string& fullPath) { return std::filesystem::path(fullPath).stem().string(); }
-
 bool StringExtensions::TryParseInt(const std::string& str, int& value)
 {
    std::string s = Trim(str);

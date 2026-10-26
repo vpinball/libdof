@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <cctype>
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <charconv>
@@ -35,7 +35,6 @@ public:
    static std::string Build(const std::string& format, const std::string& arg0, const std::string& arg1, const std::string& arg2);
    static std::string Build(const std::string& format, const std::string& arg0, const std::string& arg1, const std::string& arg2, const std::string& arg3);
    static std::string Build(const std::string& format, const std::vector<std::string>& args);
-   static std::string GetFileNameWithoutExtension(const std::string& fullPath);
    static bool TryParseInt(const std::string& str, int& value);
    static bool IsHexString(const std::string& s);
    static int HexToInt(const std::string& s);

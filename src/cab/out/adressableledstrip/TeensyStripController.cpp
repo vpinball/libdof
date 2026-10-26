@@ -246,7 +246,7 @@ void TeensyStripController::UpdateOutputs(const std::vector<uint8_t>& outputValu
          SendLedstripData(stripData, targetPosition);
 
          bytesRead = -1;
-         answerData.resize(1);
+         answerData = std::vector<uint8_t>(1);
 
          try
          {
@@ -273,7 +273,7 @@ void TeensyStripController::UpdateOutputs(const std::vector<uint8_t>& outputValu
       throw std::runtime_error(StringExtensions::Build("Failed to write output command: {0}", sp_last_error_message()));
 
    bytesRead = -1;
-   answerData.resize(1);
+   answerData = std::vector<uint8_t>(1);
 
    try
    {

@@ -1,8 +1,9 @@
 #include "DirectOutputHandler.h"
 #include "Log.h"
+#include "general/DirectoryInfo.h"
+#include "general/FileInfo.h"
+#include "general/Path.h"
 #include "general/StringExtensions.h"
-
-#include <filesystem>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -48,15 +49,13 @@ std::string DirectOutputHandler::GetInstallFolder()
    if (executablePath.empty())
       return "";
 
-   std::filesystem::path execPath(executablePath);
-   std::string assemblyPath = execPath.parent_path().string();
+   std::string assemblyPath = FileInfo(executablePath).Directory().FullName();
 
-   std::filesystem::path assemblyConfigPath = std::filesystem::path(assemblyPath) / "Config";
-   std::filesystem::path assemblyParentConfigPath = std::filesystem::path(assemblyPath).parent_path() / "Config";
-
-   if (!std::filesystem::exists(assemblyConfigPath) && std::filesystem::exists(assemblyParentConfigPath))
+   DirectoryInfo assemblyConfigPath(Path::Combine(assemblyPath, "Config"));
+   DirectoryInfo assemblyParentConfigPath(Path::GetFullPath(Path::Combine(assemblyPath, "../Config")));
+   if (!assemblyConfigPath.Exists() && assemblyParentConfigPath.Exists())
    {
-      std::string parent = std::filesystem::path(assemblyPath).parent_path().string();
+      std::string parent = Path::GetDirectoryName(assemblyPath);
       Log::Once("InstallFolderLoc",
          StringExtensions::Build("Install folder lookup: executable: {0}, install folder: {1} (PARENT of the executable folder -> new shared x86/x64 install)", executablePath, parent));
       return parent;

@@ -25,7 +25,6 @@ public:
 
 private:
    std::string m_pattern;
-   bool MatchesPattern(const std::string& filename, const std::string& pattern) const;
 };
 
 }

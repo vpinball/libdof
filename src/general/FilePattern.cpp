@@ -1,5 +1,11 @@
 #include "FilePattern.h"
 
+#include "DirectoryInfo.h"
+#include "Path.h"
+#include "StringExtensions.h"
+
+#include <filesystem>
+
 namespace DOF
 {
 
@@ -36,33 +42,24 @@ std::string FilePattern::ReplacePlaceholders(const std::unordered_map<std::strin
 
 std::vector<FileInfo> FilePattern::GetMatchingFiles(const std::unordered_map<std::string, std::string>& replaceValues) const
 {
-   std::vector<FileInfo> out;
-   if (m_pattern.empty())
-      return out;
+   if (StringExtensions::IsNullOrWhiteSpace(m_pattern))
+      return std::vector<FileInfo>();
+
+   std::string p = ReplacePlaceholders(replaceValues);
 
    try
    {
-      auto pattern = ReplacePlaceholders(replaceValues);
-      std::filesystem::path p(pattern);
-      std::filesystem::path dir = p.has_parent_path() ? p.parent_path() : std::filesystem::current_path();
-      if (!std::filesystem::exists(dir))
-         return out;
-      auto namePattern = p.filename().string();
+      DirectoryInfo filesDirectory(StringExtensions::IsNullOrWhiteSpace(Path::GetDirectoryName(p)) ? "." : Path::GetDirectoryName(p));
 
-      for (auto const& entry : std::filesystem::directory_iterator(dir))
-      {
-         if (entry.is_regular_file())
-         {
-            auto filename = entry.path().filename().string();
-            if (MatchesPattern(filename, namePattern))
-               out.emplace_back(entry.path().string());
-         }
-      }
+      if (filesDirectory.Exists())
+         return filesDirectory.GetFiles(Path::GetFileName(p));
+      else
+         return std::vector<FileInfo>();
    }
    catch (...)
    {
+      return std::vector<FileInfo>();
    }
-   return out;
 }
 
 FileInfo* FilePattern::GetFirstMatchingFile(const std::unordered_map<std::string, std::string>& replaceValues) const
@@ -118,41 +115,5 @@ bool FilePattern::IsValid() const noexcept
       }
    }
    return !bracketOpen;
-}
-
-bool FilePattern::MatchesPattern(const std::string& filename, const std::string& pattern) const
-{
-   size_t fi = 0, pi = 0;
-   size_t starIdx = std::string::npos, match = 0;
-
-   while (fi < filename.length())
-   {
-      if (pi < pattern.length() && (pattern[pi] == '?' || pattern[pi] == filename[fi]))
-      {
-         fi++;
-         pi++;
-      }
-      else if (pi < pattern.length() && pattern[pi] == '*')
-      {
-         starIdx = pi;
-         match = fi;
-         pi++;
-      }
-      else if (starIdx != std::string::npos)
-      {
-         pi = starIdx + 1;
-         match++;
-         fi = match;
-      }
-      else
-      {
-         return false;
-      }
-   }
-
-   while (pi < pattern.length() && pattern[pi] == '*')
-      pi++;
-
-   return pi == pattern.length();
 }
 }

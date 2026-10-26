@@ -97,6 +97,7 @@ set(LIBDOF_SOURCES
    src/general/FileReader.cpp
    src/general/IOConfigurator.cpp
    src/general/MathExtensions.cpp
+   src/general/Path.cpp
    src/general/StringExtensions.cpp
    src/general/analog/AnalogAlpha.cpp
    src/general/bitmap/FastBitmap.cpp

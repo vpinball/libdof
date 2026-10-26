@@ -2,7 +2,7 @@
 
 #define LIBDOF_VERSION_MAJOR 0 // X Digits
 #define LIBDOF_VERSION_MINOR 5 // Max 2 Digits
-#define LIBDOF_VERSION_PATCH 3 // Max 2 Digits
+#define LIBDOF_VERSION_PATCH 4 // Max 2 Digits
 
 #define _LIBDOF_STR(x) #x
 #define LIBDOF_STR(x) _LIBDOF_STR(x)
@@ -46,14 +46,6 @@
 #endif
 #ifdef max
 #undef max
-#endif
-
-#if !defined(PATH_SEPARATOR_CHAR)
-#ifdef _MSC_VER
-#define PATH_SEPARATOR_CHAR '\\'
-#else
-#define PATH_SEPARATOR_CHAR '/'
-#endif
 #endif
 
 namespace DOF

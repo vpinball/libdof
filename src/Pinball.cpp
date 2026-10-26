@@ -4,7 +4,6 @@
 #include <cctype>
 #include <chrono>
 #include <cstring>
-#include <filesystem>
 
 #include "Log.h"
 #include "Logger.h"
@@ -22,6 +21,8 @@
 #include "ledcontrol/loader/LedControlConfigList.h"
 #include "ledcontrol/loader/LedControlConfig.h"
 #include "ledcontrol/setup/Configurator.h"
+#include "general/FileInfo.h"
+#include "general/Path.h"
 #include "general/StringExtensions.h"
 
 namespace DOF
@@ -202,7 +203,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
                Table* newTable = Table::GetTableFromConfigXmlFile(tableFile->FullName());
                delete m_table;
                m_table = newTable;
-               m_table->SetTableConfigurationFilename(m_globalConfig->GetTableConfigFile(tableFile->FullName())->FullName());
+               m_table->SetTableConfigurationFilename(tableConfigFile->FullName());
                Log::Write(StringExtensions::Build("Table config loaded successfully from {0}", tableConfigFile->FullName()));
             }
             catch (const std::exception& e)
@@ -218,6 +219,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
          {
             Log::Warning("No table config file found. Will try to load config from LedControl file(s).");
          }
+         delete tableConfigFile;
          delete tableFile;
       }
       else
@@ -293,7 +295,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
       if (StringExtensions::IsNullOrWhiteSpace(m_table->GetTableName()))
       {
          if (!StringExtensions::IsNullOrWhiteSpace(tableFilename))
-            m_table->SetTableName(StringExtensions::GetFileNameWithoutExtension(FileInfo(tableFilename).FullName()));
+            m_table->SetTableName(Path::GetFileNameWithoutExtension(FileInfo(tableFilename).FullName()));
          else if (!StringExtensions::IsNullOrWhiteSpace(romName))
             m_table->SetTableName(romName);
       }

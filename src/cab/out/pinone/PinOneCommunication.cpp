@@ -1,6 +1,7 @@
 #include "PinOneCommunication.h"
 #include "NamedPipeServer.h"
 #include "../../../general/StringExtensions.h"
+#include <cstring>
 #include <vector>
 #include <stdexcept>
 #include <thread>

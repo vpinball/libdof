@@ -496,14 +496,6 @@ int main(int argc, const char* argv[])
       if (strcmp(argv[i], "--base-path") == 0 && i + 1 < argc)
       {
          basePath = argv[i + 1];
-         if (basePath.back() != '/' && basePath.back() != '\\')
-         {
-#ifdef _WIN32
-            basePath += "\\";
-#else
-            basePath += "/";
-#endif
-         }
          i++;
       }
       else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0)

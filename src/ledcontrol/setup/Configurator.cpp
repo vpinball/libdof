@@ -21,7 +21,10 @@
 #include "../loader/TableConfigColumn.h"
 #include "../loader/TableConfigSetting.h"
 #include "../../general/StringExtensions.h"
+#include "../../general/DirectoryInfo.h"
+#include "../../general/FileInfo.h"
 #include "../../general/FilePattern.h"
+#include "../../general/Path.h"
 #include "../../fx/matrixfx/bitmapshapes/ShapeDefinitions.h"
 #include "../../fx/rgbafx/RGBAColorEffect.h"
 #include "../../fx/analogtoyfx/AnalogToyValueEffect.h"
@@ -83,10 +86,7 @@ void Configurator::Setup(LedControlConfigList* ledControlConfigList, Table* tabl
    std::string iniFilePath = "";
    if (ledControlConfigList->size() > 0)
    {
-      iniFilePath = (*ledControlConfigList)[0]->GetLedControlIniFile();
-      size_t lastSlash = iniFilePath.find_last_of("/\\");
-      if (lastSlash != std::string::npos)
-         iniFilePath = iniFilePath.substr(0, lastSlash);
+      iniFilePath = FileInfo((*ledControlConfigList)[0]->GetLedControlIniFile()).Directory().FullName();
    }
 
    std::unordered_map<int, std::unordered_map<int, IToy*>> toyAssignments = SetupCabinet(tableConfigDict, cabinet);
@@ -408,8 +408,7 @@ void Configurator::SetupTable(
                         }
                         else
                         {
-                           std::string pathSeparator(1, PATH_SEPARATOR_CHAR);
-                           p = StringExtensions::Build("{0}{1}{2}.*", iniFilePath, pathSeparator, tc->GetShortRomName());
+                           p = Path::Combine(iniFilePath, StringExtensions::Build("{0}.*", tc->GetShortRomName()));
                         }
 
                         if (tcs->GetAreaBitmapAnimationStepCount() > 1)
