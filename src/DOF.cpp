@@ -58,7 +58,11 @@ void DOF::Init(const char* tableFilename, const char* romName)
 
 void DOF::DataReceive(char type, int number, int value) { m_pinball->ReceiveData(type, number, value); }
 
-void DOF::Finish() { m_pinball->Finish(); }
+void DOF::Finish()
+{
+   m_pinball->Finish();
+   Log::Finish();
+}
 
 std::vector<std::string> DOF::GetLedControlRomNames(const char* tableFilename)
 {
