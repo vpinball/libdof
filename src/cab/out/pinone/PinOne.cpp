@@ -1,5 +1,6 @@
 #include "PinOne.h"
 #include "PinOneCommunication.h"
+#include "PinOneHidCommunication.h"
 #include "../../Cabinet.h"
 #include "../../../general/StringExtensions.h"
 #include "../../../general/MathExtensions.h"
@@ -7,9 +8,12 @@
 #include <algorithm>
 #include <thread>
 #include <cmath>
+#include <libserialport.h>
 
 namespace DOF
 {
+
+const std::string PinOne::HidSentinel = "HID";
 
 PinOne::PinOne()
 {
@@ -30,6 +34,11 @@ PinOne::~PinOne()
    {
       delete m_pinOneCommunication;
       m_pinOneCommunication = nullptr;
+   }
+   if (m_hidDevice)
+   {
+      delete m_hidDevice;
+      m_hidDevice = nullptr;
    }
 }
 
@@ -103,6 +112,50 @@ bool PinOne::VerifySettings()
       return false;
    }
 
+   if (m_comPort == HidSentinel)
+   {
+      PinOneHidDevice* device = PinOneHidCommunication::FindDevice();
+      if (device == nullptr)
+      {
+         Log::Warning(StringExtensions::Build("{0} {1} is configured for USB HID, but no PinOne HID device was found.", "PinOne", GetName()));
+         return false;
+      }
+      delete device;
+      return true;
+   }
+
+   struct sp_port** ports;
+   if (sp_list_ports(&ports) == SP_OK)
+   {
+      bool found = false;
+      for (int i = 0; ports[i]; i++)
+      {
+         const char* portName = sp_get_port_name(ports[i]);
+         if (portName && StringExtensions::ToLower(portName) == StringExtensions::ToLower(m_comPort))
+         {
+            found = true;
+            break;
+         }
+      }
+      sp_free_port_list(ports);
+
+      if (!found)
+      {
+         struct sp_port* port = nullptr;
+         if (sp_get_port_by_name(m_comPort.c_str(), &port) == SP_OK && port)
+         {
+            sp_free_port(port);
+            found = true;
+         }
+      }
+
+      if (!found)
+      {
+         Log::Warning(StringExtensions::Build("ComPort {2} is defined for {0} {1}, but does not exist.", "PinOne", GetName(), m_comPort));
+         return false;
+      }
+   }
+
    return true;
 }
 
@@ -122,7 +175,12 @@ void PinOne::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
             buf[1] = pfx;
             std::copy(newOutputValues.begin() + i, newOutputValues.begin() + lim, buf.begin() + 2);
 
-            if (m_pinOneCommunication)
+            if (m_comPort == HidSentinel)
+            {
+               if (m_hidDevice)
+                  m_hidDevice->WriteUSB(buf);
+            }
+            else if (m_pinOneCommunication)
                m_pinOneCommunication->Write(buf);
 
             std::copy(newOutputValues.begin() + i, newOutputValues.begin() + lim, m_oldOutputValues.begin() + i);
@@ -147,6 +205,23 @@ void PinOne::UpdateDelay()
 
 void PinOne::ConnectToController()
 {
+   if (m_comPort == HidSentinel)
+   {
+      std::lock_guard<std::recursive_mutex> lock(m_portLocker);
+
+      if (m_hidDevice)
+         DisconnectFromController();
+
+      m_hidDevice = PinOneHidCommunication::FindDevice();
+      if (m_hidDevice == nullptr)
+      {
+         std::string msg = StringExtensions::Build("No PinOne HID device found for {0} {1}.", "PinOne", GetName());
+         Log::Warning(msg);
+         throw std::runtime_error(msg);
+      }
+      return;
+   }
+
    try
    {
       std::lock_guard<std::recursive_mutex> lock(m_portLocker);
@@ -179,6 +254,17 @@ void PinOne::ConnectToController()
 void PinOne::DisconnectFromController()
 {
    std::lock_guard<std::recursive_mutex> lock(m_portLocker);
+
+   if (m_comPort == HidSentinel)
+   {
+      if (m_hidDevice)
+      {
+         m_hidDevice->Close();
+         delete m_hidDevice;
+         m_hidDevice = nullptr;
+      }
+      return;
+   }
 
    if (m_pinOneCommunication)
    {

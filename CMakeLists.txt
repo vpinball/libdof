@@ -273,6 +273,7 @@ if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "win-mingw" OR PLATFORM STREQUAL
       src/cab/out/pinone/PinOne.cpp
       src/cab/out/pinone/PinOneAutoConfigurator.cpp
       src/cab/out/pinone/PinOneCommunication.cpp
+      src/cab/out/pinone/PinOneHidCommunication.cpp
       src/cab/out/ps/Pinscape.cpp
       src/cab/out/ps/PinscapeAutoConfigurator.cpp
       src/cab/out/pspico/PinscapePico.cpp
@@ -296,16 +297,16 @@ if(BUILD_SHARED)
          third-party/runtime-libs/${PLATFORM}/${ARCH}
       )
       if(ARCH STREQUAL "x64")
-         target_link_libraries(dof_shared PUBLIC libserialport64 hidapi64 libftdi164 libusb64-1.0 ws2_32)
+         target_link_libraries(dof_shared PUBLIC libserialport64 hidapi64 libftdi164 libusb64-1.0 ws2_32 setupapi)
       else()
-         target_link_libraries(dof_shared PUBLIC libserialport hidapi libftdi1 libusb-1.0 ws2_32)
+         target_link_libraries(dof_shared PUBLIC libserialport hidapi libftdi1 libusb-1.0 ws2_32 setupapi)
       endif()
    elseif(PLATFORM STREQUAL "win-mingw")
       target_link_directories(dof_shared PUBLIC
          third-party/build-libs/${PLATFORM}/${ARCH}
          third-party/runtime-libs/${PLATFORM}/${ARCH}
       )
-      target_link_libraries(dof_shared PUBLIC serialport64 hidapi64 ftdi164 usb64-1.0 ws2_32)
+      target_link_libraries(dof_shared PUBLIC serialport64 hidapi64 ftdi164 usb64-1.0 ws2_32 setupapi)
    elseif(PLATFORM STREQUAL "macos")
       target_link_directories(dof_shared PUBLIC
          third-party/runtime-libs/${PLATFORM}/${ARCH}
@@ -445,16 +446,16 @@ if(BUILD_STATIC)
             third-party/runtime-libs/${PLATFORM}/${ARCH}
          )
          if(ARCH STREQUAL "x64")
-            target_link_libraries(dof_test_s PUBLIC dof_static libserialport64 hidapi64 libftdi164 libusb64-1.0 ws2_32)
+            target_link_libraries(dof_test_s PUBLIC dof_static libserialport64 hidapi64 libftdi164 libusb64-1.0 ws2_32 setupapi)
          else()
-            target_link_libraries(dof_test_s PUBLIC dof_static libserialport hidapi libftdi1 libusb-1.0 ws2_32)
+            target_link_libraries(dof_test_s PUBLIC dof_static libserialport hidapi libftdi1 libusb-1.0 ws2_32 setupapi)
          endif()
       elseif(PLATFORM STREQUAL "win-mingw")
          target_link_directories(dof_test_s PUBLIC
             third-party/build-libs/${PLATFORM}/${ARCH}
             third-party/runtime-libs/${PLATFORM}/${ARCH}
          )
-         target_link_libraries(dof_test_s PUBLIC dof_static serialport64 hidapi64 ftdi164 usb64-1.0 ws2_32)
+         target_link_libraries(dof_test_s PUBLIC dof_static serialport64 hidapi64 ftdi164 usb64-1.0 ws2_32 setupapi)
       elseif(PLATFORM STREQUAL "macos")
          target_link_directories(dof_test_s PUBLIC
             third-party/runtime-libs/${PLATFORM}/${ARCH}
