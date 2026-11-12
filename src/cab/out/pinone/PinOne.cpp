@@ -120,14 +120,15 @@ bool PinOne::VerifySettings()
          Log::Warning(StringExtensions::Build("{0} {1} is configured for USB HID, but no PinOne HID device was found.", "PinOne", GetName()));
          return false;
       }
+      m_hidDevicePath = device->GetPath();
       delete device;
       return true;
    }
 
+   bool found = false;
    struct sp_port** ports;
    if (sp_list_ports(&ports) == SP_OK)
    {
-      bool found = false;
       for (int i = 0; ports[i]; i++)
       {
          const char* portName = sp_get_port_name(ports[i]);
@@ -138,22 +139,24 @@ bool PinOne::VerifySettings()
          }
       }
       sp_free_port_list(ports);
+   }
 
-      if (!found)
+#ifndef _WIN32
+   if (!found)
+   {
+      struct sp_port* port = nullptr;
+      if (sp_get_port_by_name(m_comPort.c_str(), &port) == SP_OK && port)
       {
-         struct sp_port* port = nullptr;
-         if (sp_get_port_by_name(m_comPort.c_str(), &port) == SP_OK && port)
-         {
-            sp_free_port(port);
-            found = true;
-         }
+         sp_free_port(port);
+         found = true;
       }
+   }
+#endif
 
-      if (!found)
-      {
-         Log::Warning(StringExtensions::Build("ComPort {2} is defined for {0} {1}, but does not exist.", "PinOne", GetName(), m_comPort));
-         return false;
-      }
+   if (!found)
+   {
+      Log::Warning(StringExtensions::Build("ComPort {2} is defined for {0} {1}, but does not exist.", "PinOne", GetName(), m_comPort));
+      return false;
    }
 
    return true;
@@ -212,7 +215,9 @@ void PinOne::ConnectToController()
       if (m_hidDevice)
          DisconnectFromController();
 
-      m_hidDevice = PinOneHidCommunication::FindDevice();
+      hid_device* fp = m_hidDevicePath.empty() ? nullptr : hid_open_path(m_hidDevicePath.c_str());
+      if (fp)
+         m_hidDevice = new PinOneHidDevice(fp, m_hidDevicePath, PinOneHidCommunication::VendorID, PinOneHidCommunication::ProductID);
       if (m_hidDevice == nullptr)
       {
          std::string msg = StringExtensions::Build("No PinOne HID device found for {0} {1}.", "PinOne", GetName());

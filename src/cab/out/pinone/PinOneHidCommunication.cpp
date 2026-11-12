@@ -1,6 +1,7 @@
 #include "PinOneHidCommunication.h"
 #include "../../../Log.h"
 #include <algorithm>
+#include <cwchar>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -66,15 +67,21 @@ bool PinOneHidDevice::WriteUSB(const std::vector<uint8_t>& payload)
 
 bool PinOneHidDevice::TryReopenHandle()
 {
-   Log::Error("PinOne Controller: invalid handle on write; trying to reopen handle");
-   hid_device* fp2 = hid_open_path(m_path.c_str());
-
-   if (fp2)
+#ifdef _WIN32
+   const wchar_t* error = hid_error(m_fp);
+   if (error && wcsstr(error, L"(0x00000006)"))
    {
-      Close();
-      m_fp = fp2;
-      return true;
+      Log::Error("PinOne Controller: invalid handle on write; trying to reopen handle");
+      hid_device* fp2 = hid_open_path(m_path.c_str());
+
+      if (fp2)
+      {
+         Close();
+         m_fp = fp2;
+         return true;
+      }
    }
+#endif
 
    return false;
 }
