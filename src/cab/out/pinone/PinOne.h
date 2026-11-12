@@ -12,9 +12,13 @@ namespace DOF
 
 class Cabinet;
 class PinOneCommunication;
+class PinOneHidDevice;
 
 class PinOne : public OutputControllerFlexCompleteBase
 {
+public:
+   static const std::string HidSentinel;
+
 private:
    std::mutex m_numberUpdateLocker;
    int m_number = -1;
@@ -26,6 +30,7 @@ private:
    bool m_comPortSet = false;
    std::recursive_mutex m_portLocker;
    PinOneCommunication* m_pinOneCommunication = nullptr;
+   PinOneHidDevice* m_hidDevice = nullptr;
 
    std::vector<uint8_t> m_oldOutputValues;
    std::chrono::steady_clock::time_point m_lastUpdate;

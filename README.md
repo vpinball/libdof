@@ -24,7 +24,7 @@ This library is currently used by [Visual Pinball Standalone](https://github.com
 - **[WemosD1MPStripController](https://github.com/aetios50/PincabLedStrip)** - Wemos D1 Mini Pro based WS2812 LED strip controller
 - **[PacLED64](https://www.ultimarc.com/output/led-and-output-controllers/pacled64/)** - Ultimarc's 64-output LED controller with PWM support
 - **[LedWiz](https://groovygamegear.com/webstore/index.php?main_page=product_info&products_id=239)** - LED-Wiz's 32-port USB compatible lighting and output controller
-- **[PinOne](https://www.clevelandsoftwaredesign.com/pinball-parts/pinone)** - Cleveland Software Design controller with 63 outputs
+- **[PinOne](https://www.clevelandsoftwaredesign.com/pinball-parts/pinone)** - Cleveland Software Design controller with 63 outputs, including the [PinOne Ultra](#pinone-ultra-usb-hid) over USB HID
 - **[FTDI Controllers](https://directoutput.github.io/DirectOutput/hardware.html#hardware_FT245bitbang)** - FT245R bitbang controllers  
 
 ### **Implemented & Ready To Test**
@@ -40,6 +40,26 @@ This library is currently used by [Visual Pinball Standalone](https://github.com
 - **Philips Hue** - *Smart lighting integration*
 
 `libdof` is actively used by [Visual Pinball Standalone](https://github.com/vpinball/vpinball/tree/standalone) and continues expanding controller support. 
+
+### **PinOne Ultra (USB HID)**
+
+The PinOne Ultra, and PinOne boards on current firmware, receive output updates over a USB HID vendor channel instead of a serial port:
+
+| | |
+|---|---|
+| Vendor / Product ID | `0x39F5` / `0x9208` |
+| HID usage page / usage | `0xFF00` / `0x01` (vendor-defined collection) |
+| Output report | 64 bytes: report ID `6`, followed by the 9-byte PinOne packet `[0, 200 + bank, v1..v7]`, zero padded |
+
+- **Auto-detection:** When the HID vendor channel is found, auto-configuration adds the board with `ComPort` set to `HID` and never opens a serial port. A legacy-firmware board (`0x0E8F` / `0x9207`) is detected by looking up the COM port that belongs to that VID/PID. libdof no longer probes every serial port on the system.
+- **Manual configuration:** Use `<ComPort>HID</ComPort>` in `Cabinet.xml` (see the example below).
+- **Do not point `ComPort` at the Ultra's serial port.** The Ultra also exposes a USB serial port (e.g. `COM9` or `/dev/ttyACM0`) used for firmware and configuration. libdof does not need it, and opening it at certain baud rates puts the board into firmware update mode. If an existing config names that port, change it to `HID`.
+- **Shared access:** The HID channel can be opened by several programs at once, so the PinOne configuration tool can stay connected while libdof is running.
+- **Linux:** Opening `/dev/hidraw*` requires permission. Add a udev rule, for example `/etc/udev/rules.d/99-pinone.rules`:
+  ```
+  SUBSYSTEM=="hidraw", ATTRS{idVendor}=="39f5", ATTRS{idProduct}=="9208", MODE="0666"
+  ```
+  Then run `sudo udevadm control --reload-rules && sudo udevadm trigger` and reconnect the board.
 
 > [!NOTE]
 > On macOS, accessing HID devices with **usage page 0x06** and **usage 0x00** (like Pinscape Pico) requires elevated permissions. You must run as sudo to communicate with the device. See [here](https://gist.github.com/jsm174/d8711b7ea4af4501090f96f1db808202) for more details.
@@ -302,7 +322,7 @@ For custom setups, create a `CabinetConfig.xml` file in your DOF config director
     <PinOne>
       <Name>Main PinOne</Name>
       <Number>1</Number>
-      <ComPort>/dev/ttyACM0</ComPort>
+      <ComPort>HID</ComPort> <!-- USB HID (current firmware / PinOne Ultra), or a serial port such as /dev/ttyACM0 for legacy firmware -->
     </PinOne>
   </OutputControllers>
   
