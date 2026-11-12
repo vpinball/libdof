@@ -31,6 +31,7 @@ private:
    std::recursive_mutex m_portLocker;
    PinOneCommunication* m_pinOneCommunication = nullptr;
    PinOneHidDevice* m_hidDevice = nullptr;
+   std::string m_hidDevicePath;
 
    std::vector<uint8_t> m_oldOutputValues;
    std::chrono::steady_clock::time_point m_lastUpdate;

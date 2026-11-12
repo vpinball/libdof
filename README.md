@@ -54,7 +54,7 @@ The PinOne Ultra, and PinOne boards on current firmware, receive output updates 
 - **Auto-detection:** When the HID vendor channel is found, auto-configuration adds the board with `ComPort` set to `HID` and never opens a serial port. A legacy-firmware board (`0x0E8F` / `0x9207`) is detected by looking up the COM port that belongs to that VID/PID. libdof no longer probes every serial port on the system.
 - **Manual configuration:** Use `<ComPort>HID</ComPort>` in `Cabinet.xml` (see the example below).
 - **Do not point `ComPort` at the Ultra's serial port.** The Ultra also exposes a USB serial port (e.g. `COM9` or `/dev/ttyACM0`) used for firmware and configuration. libdof does not need it, and opening it at certain baud rates puts the board into firmware update mode. If an existing config names that port, change it to `HID`.
-- **Shared access:** The HID channel can be opened by several programs at once, so the PinOne configuration tool can stay connected while libdof is running.
+- **Shared access:** On Windows and Linux the HID channel can be opened by several programs at once, so the PinOne configuration tool can stay connected while libdof is running. On macOS hidapi opens HID devices exclusively, so close the configuration tool before starting libdof.
 - **Linux:** Opening `/dev/hidraw*` requires permission. Add a udev rule, for example `/etc/udev/rules.d/99-pinone.rules`:
   ```
   SUBSYSTEM=="hidraw", ATTRS{idVendor}=="39f5", ATTRS{idProduct}=="9208", MODE="0666"
