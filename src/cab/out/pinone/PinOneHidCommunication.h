@@ -17,6 +17,7 @@ public:
    const std::string& GetPath() const { return m_path; }
    uint16_t GetVendorID() const { return m_vendorID; }
    uint16_t GetProductID() const { return m_productID; }
+   int GetReportSize() const;
 
    void Close();
    bool WriteUSB(const std::vector<uint8_t>& payload);
@@ -40,6 +41,9 @@ public:
    static const uint16_t Usage = 0x01;
    static const uint8_t ReportId = 6;
    static const int ReportSize = 64;
+   static const uint16_t XboxVendorID = 0x045E;
+   static const uint16_t XboxProductID = 0x0B13;
+   static const int XboxReportSize = 10;
 
    static PinOneHidDevice* FindDevice();
    static std::vector<PinOneHidDevice*> FindDevices();
