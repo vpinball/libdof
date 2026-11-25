@@ -47,18 +47,21 @@ The PinOne Ultra, and PinOne boards on current firmware, receive output updates 
 
 | | |
 |---|---|
-| Vendor / Product ID | `0x39F5` / `0x9208` |
+| Vendor ID | `0x39F5` |
+| Product ID | Any ID in `0x9200`–`0x92FF`, currently `0x9208` (standard mode) or `0x9209` (XInput controller mode) |
 | HID usage page / usage | `0xFF00` / `0x01` (vendor-defined collection) |
 | Output report | 64 bytes: report ID `6`, followed by the 9-byte PinOne packet `[0, 200 + bank, v1..v7]`, zero padded |
 
+- **Product IDs:** The board reports a different product ID for each USB mode, and the vendor channel works the same in all of them. Product IDs `0x9200`–`0x92FF` under vendor ID `0x39F5` are reserved for PinOne boards, and libdof accepts all of them, so firmware that adds a product ID in that range needs no libdof update.
 - **Auto-detection:** When the HID vendor channel is found, auto-configuration adds the board with `ComPort` set to `HID` and never opens a serial port. A legacy-firmware board (`0x0E8F` / `0x9207`) is detected by looking up the COM port that belongs to that VID/PID. libdof no longer probes every serial port on the system.
 - **Manual configuration:** Use `<ComPort>HID</ComPort>` in `Cabinet.xml` (see the example below).
 - **Do not point `ComPort` at the Ultra's serial port.** The Ultra also exposes a USB serial port (e.g. `COM9` or `/dev/ttyACM0`) used for firmware and configuration. libdof does not need it, and opening it at certain baud rates puts the board into firmware update mode. If an existing config names that port, change it to `HID`.
 - **Shared access:** On Windows and Linux the HID channel can be opened by several programs at once, so the PinOne configuration tool can stay connected while libdof is running. On macOS hidapi opens HID devices exclusively, so close the configuration tool before starting libdof.
 - **Linux:** Opening `/dev/hidraw*` requires permission. Add a udev rule, for example `/etc/udev/rules.d/99-pinone.rules`:
   ```
-  SUBSYSTEM=="hidraw", ATTRS{idVendor}=="39f5", ATTRS{idProduct}=="9208", MODE="0666"
+  SUBSYSTEM=="hidraw", ATTRS{idVendor}=="39f5", MODE="0666"
   ```
+  The rule matches on the vendor ID only, so it covers every PinOne product ID.
   Then run `sudo udevadm control --reload-rules && sudo udevadm trigger` and reconnect the board.
 
 > [!NOTE]

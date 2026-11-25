@@ -121,6 +121,7 @@ bool PinOne::VerifySettings()
          return false;
       }
       m_hidDevicePath = device->GetPath();
+      m_hidProductID = device->GetProductID();
       delete device;
       return true;
    }
@@ -217,7 +218,7 @@ void PinOne::ConnectToController()
 
       hid_device* fp = m_hidDevicePath.empty() ? nullptr : hid_open_path(m_hidDevicePath.c_str());
       if (fp)
-         m_hidDevice = new PinOneHidDevice(fp, m_hidDevicePath, PinOneHidCommunication::VendorID, PinOneHidCommunication::ProductID);
+         m_hidDevice = new PinOneHidDevice(fp, m_hidDevicePath, PinOneHidCommunication::VendorID, m_hidProductID);
       if (m_hidDevice == nullptr)
       {
          std::string msg = StringExtensions::Build("No PinOne HID device found for {0} {1}.", "PinOne", GetName());

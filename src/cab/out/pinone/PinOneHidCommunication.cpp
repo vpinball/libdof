@@ -105,6 +105,8 @@ std::string PinOneHidDevice::GetLastHidErrMsg()
 #endif
 }
 
+bool PinOneHidCommunication::IsPinOneProduct(uint16_t productID) { return (productID & ProductIDMask) == ProductIDFamily; }
+
 PinOneHidDevice* PinOneHidCommunication::FindDevice()
 {
    std::vector<PinOneHidDevice*> devices = FindDevices();
@@ -121,11 +123,11 @@ std::vector<PinOneHidDevice*> PinOneHidCommunication::FindDevices()
 {
    std::vector<PinOneHidDevice*> devices;
 
-   hid_device_info* devs = hid_enumerate(VendorID, ProductID);
+   hid_device_info* devs = hid_enumerate(VendorID, 0);
 
    for (hid_device_info* cur = devs; cur; cur = cur->next)
    {
-      if (cur->vendor_id != VendorID || cur->product_id != ProductID)
+      if (cur->vendor_id != VendorID || !IsPinOneProduct(cur->product_id))
          continue;
 
       if (cur->usage_page != UsagePage || cur->usage != Usage)
