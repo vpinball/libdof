@@ -35,11 +35,14 @@ class PinOneHidCommunication
 {
 public:
    static const uint16_t VendorID = 0x39F5;
-   static const uint16_t ProductID = 0x9208;
+   static const uint16_t ProductIDMask = 0xFF00;
+   static const uint16_t ProductIDFamily = 0x9200;
    static const uint16_t UsagePage = 0xFF00;
    static const uint16_t Usage = 0x01;
    static const uint8_t ReportId = 6;
    static const int ReportSize = 64;
+
+   static bool IsPinOneProduct(uint16_t productID);
 
    static PinOneHidDevice* FindDevice();
    static std::vector<PinOneHidDevice*> FindDevices();
