@@ -62,6 +62,7 @@ void PacDriveSingleton::Shutdown()
          }
       }
       m_usbDevices.clear();
+      m_usbInterfaces.clear();
 
       if (m_usbContext)
       {
@@ -383,6 +384,17 @@ bool PacDriveSingleton::PacLed64SetLEDIntensities(int index, const uint8_t* data
    bool success = true;
    int maxLeds = (device.type == DeviceType::PacLED64) ? 64 : 96;
 
+   if (device.type == DeviceType::IPACIO)
+   {
+      int interfaceNumber = GetUsbInterface(index);
+      for (int i = 0; i < maxLeds; i++)
+      {
+         if (!SendUltimateIOCommand(usbDevice, interfaceNumber, static_cast<uint8_t>(i), data[i]))
+            success = false;
+      }
+      return success;
+   }
+
    for (int i = 0; i < maxLeds; i++)
    {
       uint8_t ledData[2];
@@ -416,6 +428,9 @@ bool PacDriveSingleton::PacLed64SetLEDIntensity(int index, int port, uint8_t int
    if (!usbDevice)
       return false;
 
+   if (device.type == DeviceType::IPACIO)
+      return SendUltimateIOCommand(usbDevice, GetUsbInterface(index), static_cast<uint8_t>(port), intensity);
+
    uint8_t data[2];
    data[0] = static_cast<uint8_t>(port);
    data[1] = intensity;
@@ -439,6 +454,20 @@ bool PacDriveSingleton::PacLed64SetLEDStates(int index, int group, uint8_t data)
       return false;
 
    bool success = true;
+
+   if (device.type == DeviceType::IPACIO)
+   {
+      int interfaceNumber = GetUsbInterface(index);
+      if (group == 0)
+         return SendUltimateIOCommand(usbDevice, interfaceNumber, 0x80, 0);
+      for (int bit = 0; bit < 8; bit++)
+      {
+         int ledIndex = (group - 1) * 8 + bit;
+         if (ledIndex < 96 && !SendUltimateIOCommand(usbDevice, interfaceNumber, static_cast<uint8_t>(ledIndex), (data & (1 << bit)) ? 255 : 0))
+            success = false;
+      }
+      return success;
+   }
 
    // Special case: group 0 means turn off all LEDs
    if (group == 0)
@@ -495,6 +524,9 @@ bool PacDriveSingleton::PacLed64SetLEDFadeTime(int index, uint8_t fadeTime)
    libusb_device_handle* usbDevice = GetUsbDevice(index);
    if (!usbDevice)
       return false;
+
+   if (device.type == DeviceType::IPACIO)
+      return SendUltimateIOCommand(usbDevice, GetUsbInterface(index), 0xC0, fadeTime);
 
    uint8_t data[2];
    data[0] = 0x40; // Fade command base
@@ -579,6 +611,20 @@ libusb_device_handle* PacDriveSingleton::GetUsbDevice(int index)
    return nullptr;
 }
 
+int PacDriveSingleton::GetUsbInterface(int index)
+{
+   std::lock_guard<std::mutex> lock(m_usbDevicesMutex);
+   auto it = m_usbInterfaces.find(index);
+   return (it != m_usbInterfaces.end()) ? it->second : 0;
+}
+
+bool PacDriveSingleton::SendUltimateIOCommand(libusb_device_handle* usbDevice, int interfaceNumber, uint8_t command, uint8_t value)
+{
+   uint8_t message[5] = { 0x03, command, value, 0, 0 };
+   int result = libusb_control_transfer(usbDevice, 0x21, 9, 0x0203, static_cast<uint16_t>(interfaceNumber), message, 5, 2000);
+   return (result == 5);
+}
+
 void PacDriveSingleton::OpenUsbDevice(int index)
 {
    if (index < 0 || index >= static_cast<int>(m_devices.size()))
@@ -595,15 +641,28 @@ void PacDriveSingleton::OpenUsbDevice(int index)
    libusb_device_handle* handle = libusb_open_device_with_vid_pid(m_usbContext, device.vendorId, device.productId);
    if (handle)
    {
-      if (libusb_kernel_driver_active(handle, 0) == 1)
+      int interfaceNumber = 0;
+      if (device.type == DeviceType::IPACIO)
       {
-         libusb_detach_kernel_driver(handle, 0);
+         libusb_config_descriptor* config = nullptr;
+         if (libusb_get_active_config_descriptor(libusb_get_device(handle), &config) == 0 && config)
+         {
+            if (config->bNumInterfaces > 0 && config->interface[config->bNumInterfaces - 1].num_altsetting > 0)
+               interfaceNumber = config->interface[config->bNumInterfaces - 1].altsetting[0].bInterfaceNumber;
+            libusb_free_config_descriptor(config);
+         }
       }
 
-      int result = libusb_claim_interface(handle, 0);
+      if (libusb_kernel_driver_active(handle, interfaceNumber) == 1)
+      {
+         libusb_detach_kernel_driver(handle, interfaceNumber);
+      }
+
+      int result = libusb_claim_interface(handle, interfaceNumber);
       if (result == 0)
       {
          m_usbDevices[index] = handle;
+         m_usbInterfaces[index] = interfaceNumber;
       }
       else
       {
@@ -619,10 +678,17 @@ void PacDriveSingleton::CloseUsbDevice(int index)
    auto it = m_usbDevices.find(index);
    if (it != m_usbDevices.end())
    {
+      int interfaceNumber = 0;
+      auto interfaceIt = m_usbInterfaces.find(index);
+      if (interfaceIt != m_usbInterfaces.end())
+      {
+         interfaceNumber = interfaceIt->second;
+         m_usbInterfaces.erase(interfaceIt);
+      }
       if (it->second)
       {
-         libusb_release_interface(it->second, 0);
-         libusb_attach_kernel_driver(it->second, 0);
+         libusb_release_interface(it->second, interfaceNumber);
+         libusb_attach_kernel_driver(it->second, interfaceNumber);
          libusb_close(it->second);
       }
       m_usbDevices.erase(it);
