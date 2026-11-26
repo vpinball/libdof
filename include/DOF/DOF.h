@@ -10,11 +10,17 @@
 #define LIBDOF_VERSION LIBDOF_STR(LIBDOF_VERSION_MAJOR) "." LIBDOF_STR(LIBDOF_VERSION_MINOR) "." LIBDOF_STR(LIBDOF_VERSION_PATCH)
 #define LIBDOF_MINOR_VERSION LIBDOF_STR(LIBDOF_VERSION_MAJOR) "." LIBDOF_STR(LIBDOF_VERSION_MINOR)
 
-#ifdef _MSC_VER
+#if defined(LIBDOF_STATIC)
+#define LIBDOFAPI
+#elif defined(_MSC_VER)
 #define LIBDOFAPI __declspec(dllexport)
-#define LIBDOFCALLBACK __stdcall
 #else
 #define LIBDOFAPI __attribute__((visibility("default")))
+#endif
+
+#ifdef _MSC_VER
+#define LIBDOFCALLBACK __stdcall
+#else
 #define LIBDOFCALLBACK
 #endif
 
