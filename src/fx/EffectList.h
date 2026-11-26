@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include "DOF/DOF.h"
 #include "../general/generic/IXmlSerializable.h"
@@ -15,7 +16,7 @@ class EffectList : public std::unordered_map<std::string, IEffect*>, public IXml
 {
 public:
    EffectList() = default;
-   ~EffectList() { Finish(); }
+   ~EffectList();
 
    void Finish();
    void Init(Table* table);
@@ -28,6 +29,9 @@ public:
 
    void Add(IEffect* effect);
    bool Contains(const std::string& name) const;
+
+private:
+   std::unordered_set<IEffect*> m_initialized;
 };
 
 }

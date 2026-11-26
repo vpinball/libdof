@@ -36,6 +36,7 @@ Pinball::Pinball()
    , m_inputQueue(new InputQueue())
    , m_keepMainThreadAlive(false)
    , m_mainThreadDoWork(false)
+   , m_cabinetOwner(nullptr)
 {
 }
 
@@ -46,6 +47,7 @@ Pinball::~Pinball()
    delete m_alarms;
    delete m_globalConfig;
    delete m_inputQueue;
+   delete m_cabinetOwner;
 }
 
 void Pinball::Setup(const std::string& globalConfigFileName, const std::string& tableFilename, const std::string& romName)
@@ -324,15 +326,17 @@ void Pinball::Init()
    {
       Log::Write("Starting processes");
 
-      CabinetOwner* co = new CabinetOwner();
-      co->SetAlarms(m_alarms);
-      co->GetConfigurationSettings().emplace("LedControlMinimumEffectDurationMs", std::to_string(m_globalConfig->GetLedControlMinimumEffectDurationMs()));
-      co->GetConfigurationSettings().emplace("LedWizDefaultMinCommandIntervalMs", std::to_string(m_globalConfig->GetLedWizDefaultMinCommandIntervalMs()));
-      co->GetConfigurationSettings().emplace("PacLedDefaultMinCommandIntervalMs", std::to_string(m_globalConfig->GetPacLedDefaultMinCommandIntervalMs()));
-      m_cabinet->Init(co);
-      delete co;
+      delete m_cabinetOwner;
+      m_cabinetOwner = new CabinetOwner();
+      m_cabinetOwner->SetAlarms(m_alarms);
+      m_cabinetOwner->GetConfigurationSettings().emplace("LedControlMinimumEffectDurationMs", std::to_string(m_globalConfig->GetLedControlMinimumEffectDurationMs()));
+      m_cabinetOwner->GetConfigurationSettings().emplace("LedWizDefaultMinCommandIntervalMs", std::to_string(m_globalConfig->GetLedWizDefaultMinCommandIntervalMs()));
+      m_cabinetOwner->GetConfigurationSettings().emplace("PacLedDefaultMinCommandIntervalMs", std::to_string(m_globalConfig->GetPacLedDefaultMinCommandIntervalMs()));
+      m_cabinet->Init(m_cabinetOwner);
 
+      m_tableStarted = true;
       m_table->Init(this);
+      m_alarmsStarted = true;
       m_alarms->Init(this);
       m_table->TriggerStaticEffects();
       m_cabinet->Update();
@@ -350,23 +354,46 @@ void Pinball::Init()
 
 void Pinball::Finish()
 {
-   try
+   Log::Write("Finishing framework");
+   std::string errors;
+   bool failed = false;
+   auto step = [&errors, &failed](const char* name, const std::function<void()>& action)
    {
-      Log::Write("Finishing framework");
-      FinishMainThread();
+      std::string error;
+      try
+      {
+         action();
+         return;
+      }
+      catch (const std::exception& e)
+      {
+         error = e.what();
+      }
+      catch (...)
+      {
+         error = "unknown exception";
+      }
+      failed = true;
+      Log::Exception(StringExtensions::Build("An exception occured while finishing the {0}: {1}", name, error));
+      errors += (errors.empty() ? "" : "; ") + StringExtensions::Build("{0}: {1}", name, error);
+   };
+   step("main thread", [this]() { FinishMainThread(); });
+   if (m_alarmsStarted && m_alarms)
+      step("alarms", [this]() { m_alarms->Finish(); });
+   if (m_tableStarted && m_table)
+      step("table", [this]() { m_table->Finish(); });
+   if (m_cabinet)
+      step("cabinet", [this]() { m_cabinet->Finish(); });
+   m_alarmsStarted = m_tableStarted = false;
+   if (m_cabinet)
+      m_cabinet->SetOwner(nullptr);
+   delete m_cabinetOwner;
+   m_cabinetOwner = nullptr;
+   if (failed)
+      throw std::runtime_error("DirectOutput framework has encountered while finishing.\n Inner exception: " + errors);
 
-      m_alarms->Finish();
-      m_table->Finish();
-      m_cabinet->Finish();
-
-      Log::Write("DirectOutput framework finished.");
-      Log::Write("Bye and thanks for using!");
-   }
-   catch (const std::exception& e)
-   {
-      Log::Exception(StringExtensions::Build("An exception occured while finishing the DirectOutput framework: {0}", e.what()));
-      throw std::runtime_error("DirectOutput framework has encountered while finishing.");
-   }
+   Log::Write("DirectOutput framework finished.");
+   Log::Write("Bye and thanks for using!");
 }
 
 void Pinball::InitMainThread()

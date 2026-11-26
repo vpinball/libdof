@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <thread>
 
@@ -17,6 +18,7 @@ class AlarmHandler;
 class GlobalConfig;
 class InputQueue;
 class TableElementData;
+class CabinetOwner;
 
 class Pinball
 {
@@ -59,6 +61,10 @@ private:
    std::condition_variable m_mainThreadCV;
    std::atomic<bool> m_keepMainThreadAlive;
    std::atomic<bool> m_mainThreadDoWork;
+
+   bool m_tableStarted = false;
+   bool m_alarmsStarted = false;
+   CabinetOwner* m_cabinetOwner;
 
    static const int MAX_INPUT_DATA_PROCESSING_TIME_MS = 10;
 };

@@ -1,4 +1,5 @@
 #include "OutputControllerList.h"
+#include <stdexcept>
 
 #include "../../Log.h"
 #include "../../general/StringExtensions.h"
@@ -35,7 +36,10 @@
 namespace DOF
 {
 
-OutputControllerList::OutputControllerList() { }
+OutputControllerList::OutputControllerList()
+   : m_initializedCount(0)
+{
+}
 
 OutputControllerList::~OutputControllerList() { Clear(); }
 
@@ -50,8 +54,12 @@ void OutputControllerList::Init(Cabinet* cabinet)
 {
    Log::Write("Initializing output controllers");
 
+   m_initializedCount = 0;
    for (IOutputController* controller : *this)
+   {
+      m_initializedCount++;
       controller->Init(cabinet);
+   }
 
    Log::Write("Output controllers initialized");
 }
@@ -60,8 +68,31 @@ void OutputControllerList::Finish()
 {
    Log::Write("Finishing output controllers");
 
-   for (IOutputController* controller : *this)
-      controller->Finish();
+   std::string failures;
+   bool failed = false;
+   size_t count = m_initializedCount < size() ? m_initializedCount : size();
+   m_initializedCount = 0;
+   for (size_t i = 0; i < count; i++)
+   {
+      IOutputController* controller = at(i);
+      std::string error;
+      try
+      {
+         controller->Finish();
+         continue;
+      }
+      catch (const std::exception& e)
+      {
+         error = e.what();
+      }
+      catch (...)
+      {
+         error = "unknown error";
+      }
+      failed = true;
+      Log::Exception(StringExtensions::Build("Finishing output controller {0} failed: {1}", controller->GetName(), error));
+      failures += (failures.empty() ? "" : "; ") + controller->GetName() + ": " + error;
+   }
 
 #ifdef __HIDAPI__
    DudesCab::ClearDevices();
@@ -69,6 +100,8 @@ void OutputControllerList::Finish()
 #endif
 
    Log::Write("Output controllers finished");
+   if (failed)
+      throw std::runtime_error("Output controllers failed to finish: " + failures);
 }
 
 void OutputControllerList::Update()

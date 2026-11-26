@@ -94,6 +94,7 @@ template <typename MatrixElementType> void MatrixEffectBase<MatrixElementType>::
 
 template <typename MatrixElementType> void MatrixEffectBase<MatrixElementType>::Init(Table* table)
 {
+   m_table = table;
    if (!StringExtensions::IsNullOrWhiteSpace(m_toyName) && table->GetPinball()->GetCabinet()->GetToys()->Contains(m_toyName))
    {
       IToy* toy = table->GetPinball()->GetCabinet()->GetToys()->FindByName(m_toyName);
@@ -134,8 +135,6 @@ template <typename MatrixElementType> void MatrixEffectBase<MatrixElementType>::
                args));
       }
    }
-
-   m_table = table;
 }
 
 template <typename MatrixElementType> void MatrixEffectBase<MatrixElementType>::Finish()

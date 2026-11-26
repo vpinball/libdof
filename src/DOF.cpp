@@ -60,7 +60,15 @@ void DOF::DataReceive(char type, int number, int value) { m_pinball->ReceiveData
 
 void DOF::Finish()
 {
-   m_pinball->Finish();
+   try
+   {
+      m_pinball->Finish();
+   }
+   catch (...)
+   {
+      Log::Finish();
+      throw;
+   }
    Log::Finish();
 }
 

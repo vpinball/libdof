@@ -5,6 +5,7 @@
 #include "../../general/StringExtensions.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace DOF
 {
@@ -62,20 +63,33 @@ void ToyList::Finish()
 {
    Log::Write(StringExtensions::Build("Finishing {0} toys", std::to_string(size())));
 
+   std::string failures;
+   bool failed = false;
    for (IToy* toy : *this)
    {
       if (toy != nullptr)
       {
+         std::string error;
          try
          {
             toy->Finish();
+            continue;
          }
          catch (const std::exception& e)
          {
-            Log::Exception(StringExtensions::Build("Error finishing toy {0}: {1}", toy->GetName(), e.what()));
+            error = e.what();
          }
+         catch (...)
+         {
+            error = "unknown exception";
+         }
+         failed = true;
+         Log::Exception(StringExtensions::Build("Error finishing toy {0}: {1}", toy->GetName(), error));
+         failures += (failures.empty() ? "" : "; ") + toy->GetName() + ": " + error;
       }
    }
+   if (failed)
+      throw std::runtime_error("Toys failed to finish: " + failures);
 }
 
 void ToyList::UpdateToys()
