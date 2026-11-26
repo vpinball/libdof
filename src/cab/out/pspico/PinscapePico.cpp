@@ -81,8 +81,8 @@ void PinscapePico::Init(Cabinet* cabinet)
       m_minCommandIntervalMs = 0;
    }
 
-   OutputControllerFlexCompleteBase::Init(cabinet);
    ConnectToController();
+   OutputControllerFlexCompleteBase::Init(cabinet);
 }
 
 void PinscapePico::Finish()
@@ -316,7 +316,10 @@ void PinscapePico::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
    int firstChangedIndex = -1;
    int lastChangedIndex = -1;
 
-   for (int i = 0; i < GetNumberOfOutputs(); ++i)
+   if (static_cast<int>(m_oldOutputValues.size()) < GetNumberOfOutputs())
+      m_oldOutputValues.resize(GetNumberOfOutputs(), 255);
+   int count = std::min(GetNumberOfOutputs(), static_cast<int>(newOutputValues.size()));
+   for (int i = 0; i < count; ++i)
    {
       int val = newOutputValues[i];
       bool changed = (newOutputValues[i] != m_oldOutputValues[i]);
@@ -349,6 +352,11 @@ int PinscapePico::GetNumberOfOutputs() const
 {
    if (m_dev)
       return m_dev->NumOutputs();
+   for (auto device : s_devices)
+   {
+      if (device->UnitNo() == m_number)
+         return device->NumOutputs();
+   }
    return 128;
 }
 
