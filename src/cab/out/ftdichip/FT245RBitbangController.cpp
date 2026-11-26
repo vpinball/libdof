@@ -200,6 +200,7 @@ void FT245RBitbangController::UpdaterThreadDoIt()
       return;
    }
 
+   bool started = true;
    try
    {
       SendUpdate(0);
@@ -207,12 +208,10 @@ void FT245RBitbangController::UpdaterThreadDoIt()
    catch (const std::exception&)
    {
       Log::Exception(StringExtensions::Build("Could not send initial update to FTDI chip {0}. Updater thread will terminate.", m_serialNumber));
-      Disconnect();
-      m_updaterThreadFinished = true;
-      return;
+      started = false;
    }
 
-   while (m_keepUpdaterThreadAlive)
+   while (started && m_keepUpdaterThreadAlive)
    {
       m_currentValue = m_newValue.load();
 
