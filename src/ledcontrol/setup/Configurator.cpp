@@ -36,6 +36,7 @@
 #include "../../fx/timmedfx/DelayEffect.h"
 #include "../../fx/timmedfx/FadeEffect.h"
 #include "../../fx/valuefx/ValueInvertEffect.h"
+#include "../../fx/conditionfx/TableElementConditionEffect.h"
 #include "../../fx/valuefx/ValueMapFullRangeEffect.h"
 #include "../../fx/matrixfx/RGBAMatrixColorEffect.h"
 #include "../../fx/matrixfx/RGBAMatrixFlickerEffect.h"
@@ -1060,9 +1061,14 @@ void Configurator::SetupTable(
                         break;
                      case OutputControlEnum::Condition:
                      {
-                        std::vector<std::string> tableElementDescriptors;
-                        tableElementDescriptors.push_back(StringExtensions::Build("{0}.{1}.{2}", std::to_string(ledWizNr), std::to_string(tcc->GetNumber()), std::to_string(settingNumber)));
-                        AssignEffectToTableElements(table, tableElementDescriptors, finalEffect);
+                        TableElementConditionEffect* conditionEffect = new TableElementConditionEffect();
+                        conditionEffect->SetName(StringExtensions::Build("Ledwiz {0:00} Column {1:00} Setting {2:00} TableElementConditionEffect",
+                           std::to_string(ledWizNr), std::to_string(tcc->GetNumber()), std::to_string(settingNumber)));
+                        conditionEffect->SetTargetEffectName(finalEffect->GetName());
+                        conditionEffect->SetCondition(tcs->GetCondition());
+                        MakeEffectNameUnique(conditionEffect, table);
+                        table->GetEffects()->insert(std::make_pair(conditionEffect->GetName(), conditionEffect));
+                        AssignEffectToTableElements(table, conditionEffect->GetVariables(), conditionEffect);
                      }
                      break;
                      case OutputControlEnum::FixedOff:

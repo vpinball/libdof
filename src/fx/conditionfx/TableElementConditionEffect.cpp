@@ -8,7 +8,6 @@
 #include "../../Log.h"
 #include <exprtk.hpp>
 #include <stdexcept>
-#include <regex>
 #include <algorithm>
 
 namespace DOF
@@ -37,29 +36,18 @@ std::vector<std::string> TableElementConditionEffect::GetVariablesInternal()
    if (StringExtensions::IsNullOrWhiteSpace(c))
       return variables;
 
-   std::regex namedElementRegex(R"(\$([A-Za-z_][A-Za-z0-9_]*))");
-   std::sregex_iterator namedIter(c.begin(), c.end(), namedElementRegex);
-   std::sregex_iterator namedEnd;
-
-   for (; namedIter != namedEnd; ++namedIter)
+   if (!exprtk::collect_variables(StringExtensions::Replace(c, std::string(1, (char)TableElementTypeEnum::NamedElement), "NamedElement_"), variables))
    {
-      std::string elementName = namedIter->str(1);
-      std::string variableName = "NamedElement_" + elementName;
-      if (std::find(variables.begin(), variables.end(), variableName) == variables.end())
-      {
-         variables.push_back(variableName);
-      }
+      Log::Warning(StringExtensions::Build("Cant extract variables from condition {0}.", m_condition));
+      variables.clear();
    }
 
-   std::regex typedElementRegex(R"([LSWGMNEDCB](\d+))");
-   std::sregex_iterator typedIter(c.begin(), c.end(), typedElementRegex);
-   std::sregex_iterator typedEnd;
-
-   for (; typedIter != typedEnd; ++typedIter)
+   for (std::string& variable : variables)
    {
-      std::string fullMatch = typedIter->str(0);
-      if (std::find(variables.begin(), variables.end(), fullMatch) == variables.end())
-         variables.push_back(fullMatch);
+      if (StringExtensions::StartsWith(variable, "namedelement_"))
+         variable = "NamedElement_" + StringExtensions::ToUpper(variable.substr(13));
+      else
+         variable = StringExtensions::ToUpper(variable);
    }
 
    return variables;
@@ -96,8 +84,7 @@ void TableElementConditionEffect::InitCondition()
    m_variables.clear();
    m_symbolTable->clear();
 
-   std::string transformedCondition = m_condition;
-   transformedCondition = std::regex_replace(transformedCondition, std::regex(R"(\$([A-Za-z_][A-Za-z0-9_]*))"), "NamedElement_$1");
+   std::string transformedCondition = StringExtensions::Replace(m_condition, std::string(1, (char)TableElementTypeEnum::NamedElement), "NamedElement_");
 
    for (const std::string& var : variables)
    {
