@@ -5,6 +5,7 @@
 #include "ISupportsSetValues.h"
 #include <atomic>
 #include <mutex>
+#include <string>
 #include <vector>
 #include <thread>
 
@@ -45,6 +46,8 @@ protected:
    virtual void ConnectToController() = 0;
    virtual void DisconnectFromController() = 0;
    virtual void UpdateOutputs(const std::vector<uint8_t>& outputValues) = 0;
+   bool m_forceFullTransfer = false;
+   bool m_transferSkipped = false;
 
 
    void InitUpdaterThread();
@@ -72,7 +75,9 @@ private:
    mutable std::mutex m_conditionMutex;
    bool m_keepUpdaterThreadAlive;
    std::atomic<bool> m_updaterThreadFinished { false };
+   std::string m_finishError;
    void UpdaterThreadDoIt();
+   bool Transfer(const std::vector<uint8_t>& values, bool full);
 };
 
 }
