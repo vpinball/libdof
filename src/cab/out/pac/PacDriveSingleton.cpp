@@ -68,6 +68,7 @@ void PacDriveSingleton::Shutdown()
       m_usbDevices.clear();
       m_usbInterfaces.clear();
       m_usbDriverDetached.clear();
+      m_usbInterfaceWarned.clear();
 
       if (m_usbContext)
       {
@@ -659,7 +660,9 @@ void PacDriveSingleton::OpenUsbDevice(int index)
          }
          if (interfaceNumber < 0)
          {
-            Log::Warning(StringExtensions::Build("The LED interface of the Ultimate I/O {0} could not be identified, it is not used.", std::to_string(device.deviceId)));
+            if (!m_usbInterfaceWarned[index])
+               Log::Warning(StringExtensions::Build("The LED interface of the Ultimate I/O {0} could not be identified, it is not used.", std::to_string(device.deviceId)));
+            m_usbInterfaceWarned[index] = true;
             libusb_close(handle);
             return;
          }
@@ -673,6 +676,7 @@ void PacDriveSingleton::OpenUsbDevice(int index)
          m_usbDevices[index] = handle;
          m_usbInterfaces[index] = interfaceNumber;
          m_usbDriverDetached[index] = detached;
+         m_usbInterfaceWarned.erase(index);
       }
       else
       {
