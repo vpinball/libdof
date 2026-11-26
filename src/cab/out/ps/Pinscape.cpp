@@ -109,21 +109,19 @@ void Pinscape::Init(Cabinet* cabinet)
    OutputControllerFlexCompleteBase::Init(cabinet);
 }
 
-void Pinscape::Finish()
-{
-   if (m_dev)
-      m_dev->AllOff();
-   OutputControllerFlexCompleteBase::Finish();
-}
+void Pinscape::Finish() { OutputControllerFlexCompleteBase::Finish(); }
 
 void Pinscape::ConnectToController() { }
 
 void Pinscape::DisconnectFromController()
 {
-   if (m_dev && m_inUseState == InUseState::Running)
+   if (m_dev)
    {
-      m_dev->AllOff();
+      bool turnedOff = m_dev->AllOff();
       m_cacheInvalid = true;
+      if (!turnedOff)
+         throw std::runtime_error(StringExtensions::Build("Pinscape {0} could not send the all-off request", GetName()));
+      m_disconnectTurnedOff = true;
    }
 }
 
@@ -368,7 +366,7 @@ bool Pinscape::Device::ReadUSB(uint8_t* pBuf)
    return true;
 }
 
-void Pinscape::Device::AllOff() { SpecialRequest(0x05); }
+bool Pinscape::Device::AllOff() { return SpecialRequest(0x05); }
 
 bool Pinscape::Device::SpecialRequest(uint8_t id)
 {
