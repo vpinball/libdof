@@ -161,6 +161,7 @@ void PacUIO::PacUIOUnit::Init(Cabinet* cabinet)
 {
    if (!IsUpdaterThreadAlive())
    {
+      m_pdSingleton = &PacDriveSingleton::GetInstance();
       m_index = m_pdSingleton->PacUIOGetIndexForDeviceId(m_id);
       std::lock_guard<std::mutex> lock(m_valueChangeLocker);
       std::fill_n(m_newValue, 96, 0);
