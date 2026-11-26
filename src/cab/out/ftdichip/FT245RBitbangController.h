@@ -71,7 +71,7 @@ private:
 
    void Connect();
    void SendUpdate(uint8_t outputData);
-   void Disconnect();
+   bool Disconnect();
 };
 
 }
