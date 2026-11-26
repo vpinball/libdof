@@ -111,8 +111,12 @@ void UMXDudesCabDevice::Initialize()
 
 void UMXDudesCabDevice::SendCommand(UMXCommand command, const std::vector<uint8_t>& parameters)
 {
+   if (m_device->LastWriteFailed())
+      m_device->Reopen();
    auto dudeCommand = UMXToDudeCommand(command);
    m_device->SendCommand(dudeCommand, parameters);
+   if (m_device->LastWriteFailed())
+      throw std::runtime_error(StringExtensions::Build("Sending UMX command {0} failed", std::to_string(static_cast<int>(command))));
 }
 
 void UMXDudesCabDevice::WaitAck(uint8_t command) { }

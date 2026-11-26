@@ -130,6 +130,8 @@ public:
       const std::string& GetSerial() const { return m_serial; }
 
       void AllOff();
+      bool Reopen();
+      bool LastWriteFailed() const { return m_lastWriteFailed; }
       void ReadPwmOutputsConfig();
       bool HasOutputEnabled(uint8_t extNum, uint8_t outputNum);
       bool SupportMx();
@@ -176,6 +178,7 @@ public:
       int m_numOutputs;
 
       hid_device* m_hidDevice;
+      bool m_lastWriteFailed = false;
 
       static const Version s_minimalMxVersion;
       static const Version s_newProtocolVersion;
@@ -197,6 +200,7 @@ private:
    bool m_minCommandIntervalMsSet;
 
    Device* m_dev;
+   bool m_cacheInvalid = true;
    std::vector<uint8_t> m_oldOutputValues;
    std::vector<uint8_t> m_outputBuffer;
 
