@@ -69,7 +69,7 @@ void PinControl::UpdateOutputs(const std::vector<uint8_t>& outputValues)
 
       for (int i = 0; i < 7 && i < static_cast<int>(outputValues.size()); i++)
       {
-         if (m_oldValues == nullptr || m_oldValues[i] != outputValues[i])
+         if (m_forceFullTransfer || m_oldValues == nullptr || m_oldValues[i] != outputValues[i])
          {
             std::string command;
             if (i == 0 && outputValues[i] != 0)
@@ -77,7 +77,7 @@ void PinControl::UpdateOutputs(const std::vector<uint8_t>& outputValues)
             else
                command = StringExtensions::Build("{0},{1}#", std::to_string(i + 1), outputValues[i] == 0 ? "2" : "1");
 
-            sp_blocking_write(m_port, command.c_str(), command.length(), 1000);
+            WriteCommand(command);
          }
       }
 
@@ -85,7 +85,7 @@ void PinControl::UpdateOutputs(const std::vector<uint8_t>& outputValues)
       bool isBlack = true;
       for (int i = 7; i < 10 && i < static_cast<int>(outputValues.size()); i++)
       {
-         if (m_oldValues == nullptr || m_oldValues[i] != outputValues[i])
+         if (m_forceFullTransfer || m_oldValues == nullptr || m_oldValues[i] != outputValues[i])
             colorChanged = true;
          if (outputValues[i] != 0)
             isBlack = false;
@@ -100,7 +100,7 @@ void PinControl::UpdateOutputs(const std::vector<uint8_t>& outputValues)
             command = StringExtensions::Build("9,1,{0},{1},{2}#", outputValues.size() > 7 ? std::to_string(outputValues[7]) : "0",
                outputValues.size() > 8 ? std::to_string(outputValues[8]) : "0", outputValues.size() > 9 ? std::to_string(outputValues[9]) : "0");
 
-         sp_blocking_write(m_port, command.c_str(), command.length(), 1000);
+         WriteCommand(command);
       }
 
       if (m_oldValues == nullptr)
@@ -111,6 +111,13 @@ void PinControl::UpdateOutputs(const std::vector<uint8_t>& outputValues)
    }
    else
       throw std::runtime_error(StringExtensions::Build("COM port {0} is not initialized for {1} {2}.", m_comPort, "PinControl", GetName()));
+}
+
+void PinControl::WriteCommand(const std::string& command)
+{
+   sp_return written = sp_blocking_write(m_port, command.c_str(), command.length(), 1000);
+   if (written < 0 || static_cast<size_t>(written) != command.length())
+      throw std::runtime_error(StringExtensions::Build("Writing to COM port {0} failed for {1} {2}.", m_comPort, "PinControl", GetName()));
 }
 
 void PinControl::ConnectToController()
