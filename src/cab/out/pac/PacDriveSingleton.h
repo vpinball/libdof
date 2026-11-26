@@ -82,6 +82,7 @@ private:
 
    libusb_context* m_usbContext;
    std::map<int, libusb_device_handle*> m_usbDevices;
+   std::map<int, int> m_usbInterfaces;
    std::mutex m_usbDevicesMutex;
 
    void EnumerateDevices();
@@ -96,6 +97,8 @@ private:
    void CloseHidDevice(int index);
 
    libusb_device_handle* GetUsbDevice(int index);
+   int GetUsbInterface(int index);
+   bool SendUltimateIOCommand(libusb_device_handle* usbDevice, int interfaceNumber, uint8_t command, uint8_t value);
    void OpenUsbDevice(int index);
    void CloseUsbDevice(int index);
 };
