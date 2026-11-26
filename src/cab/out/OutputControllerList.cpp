@@ -1,5 +1,6 @@
 #include "OutputControllerList.h"
 #include <stdexcept>
+#include "DOF/Config.h"
 
 #include "../../Log.h"
 #include "../../general/StringExtensions.h"
@@ -224,6 +225,8 @@ bool OutputControllerList::FromXml(const tinyxml2::XMLElement* element)
          {
             Log::Warning(StringExtensions::Build("Failed to load output controller from XML: {0}", typeName));
             delete controller;
+            if (Config::GetInstance()->IsStrictSetup())
+               throw std::runtime_error(StringExtensions::Build("the output controller {0} could not be loaded", typeName));
          }
       }
 

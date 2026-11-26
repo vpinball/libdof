@@ -35,6 +35,8 @@ class LIBDOFAPI Config
 {
 public:
    static Config* GetInstance();
+   void SetStrictSetup(bool strictSetup);
+   bool IsStrictSetup() const;
 
    void SetBasePath(const char* basePath) { m_basePath = basePath; }
    const char* GetBasePath() const { return m_basePath.c_str(); }
