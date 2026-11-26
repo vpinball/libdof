@@ -75,7 +75,15 @@ void Pinscape::SetNumber(int value)
    }
 }
 
-bool Pinscape::VerifySettings() { return true; }
+bool Pinscape::VerifySettings()
+{
+   if (!m_dev)
+   {
+      Log::Warning(StringExtensions::Build("{0} was not found.", GetName()));
+      return false;
+   }
+   return true;
+}
 
 void Pinscape::SetMinCommandIntervalMs(int value)
 {
@@ -113,7 +121,10 @@ void Pinscape::ConnectToController() { }
 void Pinscape::DisconnectFromController()
 {
    if (m_dev && m_inUseState == InUseState::Running)
+   {
       m_dev->AllOff();
+      m_cacheInvalid = true;
+   }
 }
 
 void Pinscape::AllOff()
@@ -132,15 +143,18 @@ int Pinscape::GetNumberOfOutputs() const { return m_dev ? m_dev->GetNumOutputs()
 void Pinscape::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
 {
    if (!m_dev)
-      return;
+      throw std::runtime_error("the Pinscape device is not connected");
+   if (static_cast<int>(m_oldOutputValues.size()) < GetNumberOfOutputs())
+      m_oldOutputValues.resize(GetNumberOfOutputs(), 255);
 
+   bool full = m_forceFullTransfer || m_cacheInvalid;
    uint8_t pfx = 200;
    for (int i = 0; i < GetNumberOfOutputs(); i += 7, ++pfx)
    {
       int lim = std::min(i + 7, GetNumberOfOutputs());
       for (int j = i; j < lim; ++j)
       {
-         if (j < static_cast<int>(newOutputValues.size()) && newOutputValues[j] != m_oldOutputValues[j])
+         if (j < static_cast<int>(newOutputValues.size()) && (full || newOutputValues[j] != m_oldOutputValues[j]))
          {
             UpdateDelay();
 
@@ -151,7 +165,11 @@ void Pinscape::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
             int copySize = std::min(lim - i, static_cast<int>(newOutputValues.size()) - i);
             memcpy(buf + 2, newOutputValues.data() + i, copySize);
 
-            m_dev->WriteUSB(buf);
+            if (!m_dev->WriteUSB(buf))
+            {
+               m_cacheInvalid = true;
+               throw std::runtime_error("Pinscape USB write failed");
+            }
 
             memcpy(m_oldOutputValues.data() + i, newOutputValues.data() + i, copySize);
 
@@ -159,6 +177,7 @@ void Pinscape::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
          }
       }
    }
+   m_cacheInvalid = false;
 }
 
 void Pinscape::UpdateDelay()
