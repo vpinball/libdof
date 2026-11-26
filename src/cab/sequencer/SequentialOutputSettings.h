@@ -21,13 +21,12 @@ public:
    virtual tinyxml2::XMLElement* ToXml(tinyxml2::XMLDocument& doc) const override;
    virtual bool FromXml(const tinyxml2::XMLElement* element) override;
    virtual std::string GetXmlElementName() const override { return "SequentialOutputSettings"; }
+   void Clear();
 
 private:
    SequentialOutputSettings() = default;
    SequentialOutputSettings(const SequentialOutputSettings&) = delete;
    SequentialOutputSettings& operator=(const SequentialOutputSettings&) = delete;
-
-   void Clear();
 };
 
 }
