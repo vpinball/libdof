@@ -274,7 +274,7 @@ void PacLed64::PacLed64Unit::ShutdownLighting()
    if (IsPresent())
    {
       EnforceMinUpdateInterval();
-      PacDriveSingleton::GetInstance().PacLed64SetLEDStates(0, 0, 0);
+      PacDriveSingleton::GetInstance().PacLed64SetLEDStates(m_index, 0, 0);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
       std::fill(m_lastStateSent.begin(), m_lastStateSent.end(), false);
    }

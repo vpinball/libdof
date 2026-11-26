@@ -387,7 +387,9 @@ void PacUIO::PacUIOUnit::SendPacUIOUpdate()
 void PacUIO::PacUIOUnit::ShutdownLighting()
 {
    Log::Write("PacUIO.ShutdownLighting");
-   m_pdSingleton->PacLed64SetLEDStates(0, 0, 0);
+   if (!IsPresent())
+      return;
+   m_pdSingleton->PacLed64SetLEDStates(m_index, 0, 0);
    std::fill_n(m_lastStateSent, 96, false);
 }
 
