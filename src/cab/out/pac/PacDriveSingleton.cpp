@@ -408,7 +408,7 @@ bool PacDriveSingleton::PacLed64SetLEDIntensities(int index, const uint8_t* data
       ledData[1] = data[i];
 
       int result = libusb_control_transfer(usbDevice, 0x21, 9, 0x0200, 0, ledData, 2, 2000);
-      if (result < 0)
+      if (result != 2)
       {
          success = false;
       }
@@ -443,7 +443,7 @@ bool PacDriveSingleton::PacLed64SetLEDIntensity(int index, int port, uint8_t int
 
    int result = libusb_control_transfer(usbDevice, 0x21, 9, 0x0200, 0, data, 2, 2000);
 
-   return (result >= 0);
+   return (result == 2);
 }
 
 bool PacDriveSingleton::PacLed64SetLEDStates(int index, int group, uint8_t data)
@@ -486,7 +486,7 @@ bool PacDriveSingleton::PacLed64SetLEDStates(int index, int group, uint8_t data)
          ledData[1] = 0; // intensity = 0
 
          int result = libusb_control_transfer(usbDevice, 0x21, 9, 0x0200, 0, ledData, 2, 2000);
-         if (result < 0)
+         if (result != 2)
          {
             success = false;
          }
@@ -507,7 +507,7 @@ bool PacDriveSingleton::PacLed64SetLEDStates(int index, int group, uint8_t data)
             ledData[1] = intensity;
 
             int result = libusb_control_transfer(usbDevice, 0x21, 9, 0x0200, 0, ledData, 2, 2000);
-            if (result < 0)
+            if (result != 2)
             {
                success = false;
             }
@@ -540,7 +540,7 @@ bool PacDriveSingleton::PacLed64SetLEDFadeTime(int index, uint8_t fadeTime)
 
    int result = libusb_control_transfer(usbDevice, 0x21, 9, 0x0300, 0, data, 2, 2000);
 
-   return (result >= 0);
+   return (result == 2);
 }
 
 hid_device* PacDriveSingleton::GetHidDevice(int index)

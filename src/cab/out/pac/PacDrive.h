@@ -45,7 +45,7 @@ private:
       void Finish();
       void UpdateValue(IOutput* output);
       void TriggerPacDriveUpdaterThread();
-      void ShutdownLighting();
+      bool ShutdownLighting();
 
       bool GetUpdateRequired() const { return m_updateRequired; }
 
