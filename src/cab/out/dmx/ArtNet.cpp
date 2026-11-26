@@ -28,7 +28,8 @@ void ArtNet::UpdateOutputs(const std::vector<uint8_t>& outputValues)
       {
          if (outputValues.size() == DMX_CHANNELS)
          {
-            m_engine->SendDMX(m_broadcastAddress, m_universe, outputValues, DMX_CHANNELS);
+            if (!m_engine->SendDMX(m_broadcastAddress, m_universe, outputValues, DMX_CHANNELS))
+               throw std::runtime_error("the Art-Net packet was not sent");
          }
          else
          {

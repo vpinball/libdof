@@ -13,7 +13,7 @@ class Engine
 public:
    static Engine* GetInstance();
 
-   void SendDMX(const std::string& broadcastAddress, short universe, const std::vector<uint8_t>& data, int dataLength);
+   bool SendDMX(const std::string& broadcastAddress, short universe, const std::vector<uint8_t>& data, int dataLength);
    bool Reopen();
 
 private:
