@@ -31,7 +31,8 @@ void EffectEffectBase::TriggerTargetEffect(TableElementData* triggerData)
    {
       try
       {
-         m_targetEffect->Trigger(triggerData);
+         TableElementData data = *triggerData;
+         m_targetEffect->Trigger(&data);
       }
       catch (const std::exception& e)
       {
