@@ -70,7 +70,7 @@ void PacDrive::AddOutputs()
          Output* newOutput = new Output();
          newOutput->SetName(StringExtensions::Build("{0}.{1:00}", GetName(), std::to_string(i)));
          newOutput->SetNumber(i);
-         outputs->push_back(newOutput);
+         outputs->Add(newOutput);
       }
    }
 }
