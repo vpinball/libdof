@@ -30,17 +30,17 @@ void FT245RBitbangControllerAutoConfigurator::AutoConfig(Cabinet* cabinet)
       return;
    }
 
-   for (uint32_t i = 0; i < amountDevices; i++)
    {
       FTDI* connectFTDI = new FTDI();
 
-      FTDI::FT_DEVICE_INFO_NODE devInfo;
-      uint32_t numDevs = 1;
-      status = connectFTDI->GetDeviceInfoList(&devInfo, numDevs);
+      std::vector<FTDI::FT_DEVICE_INFO_NODE> devInfo(amountDevices);
+      uint32_t numDevs = amountDevices;
+      status = connectFTDI->GetDeviceInfoList(devInfo.data(), numDevs);
 
-      if (status == FTDI::FT_OK && numDevs > 0)
+      if (status == FTDI::FT_OK)
       {
-         deviceList.emplace_back(devInfo.SerialNumber, devInfo.Description);
+         for (uint32_t i = 0; i < numDevs; i++)
+            deviceList.emplace_back(devInfo[i].SerialNumber, devInfo[i].Description);
       }
       delete connectFTDI;
    }
