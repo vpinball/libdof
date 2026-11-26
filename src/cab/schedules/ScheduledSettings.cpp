@@ -112,11 +112,8 @@ ScheduledSettingDevice* ScheduledSettings::GetActiveSchedule(IOutput* currentOut
          const std::vector<int>& outputList = device->GetOutputList();
          int outputNumber = currentOutput->GetNumber();
 
-         if (!outputList.empty())
-         {
-            if (std::find(outputList.begin(), outputList.end(), outputNumber) == outputList.end())
-               continue;
-         }
+         if (std::find(outputList.begin(), outputList.end(), outputNumber) == outputList.end())
+            continue;
 
          if (recalculateOutputValue)
          {
