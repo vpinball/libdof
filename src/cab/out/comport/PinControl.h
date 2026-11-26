@@ -27,6 +27,7 @@ protected:
    virtual int GetNumberOfConfiguredOutputs() override;
    virtual bool VerifySettings() override;
    virtual void UpdateOutputs(const std::vector<uint8_t>& outputValues) override;
+   void WriteCommand(const std::string& command);
    virtual void ConnectToController() override;
    virtual void DisconnectFromController() override;
 
