@@ -1,9 +1,11 @@
 #include "TeensyStripController.h"
+#include "DOF/Config.h"
 #include "../../../Log.h"
 #include "../../../general/StringExtensions.h"
 #include "../../../general/MathExtensions.h"
 #include <algorithm>
 #include <numeric>
+#include <stdexcept>
 #include <thread>
 #include <chrono>
 
@@ -591,6 +593,8 @@ bool TeensyStripController::FromXml(const tinyxml2::XMLElement* element)
    if (!OutputControllerCompleteBase::FromXml(element))
       return false;
 
+   bool strict = Config::GetInstance()->IsStrictSetup();
+   bool loaded = true;
    auto loadElement = [&](const char* name, auto setter)
    {
       const tinyxml2::XMLElement* elem = element->FirstChildElement(name);
@@ -602,23 +606,38 @@ bool TeensyStripController::FromXml(const tinyxml2::XMLElement* element)
          }
          catch (...)
          {
-            return false;
+            if (strict)
+               loaded = false;
          }
       }
-      return true;
+   };
+   auto toInt = [strict](const char* text)
+   {
+      size_t end = 0;
+      int value = std::stoi(text, &end);
+      if (strict && !StringExtensions::IsNullOrWhiteSpace(text + end))
+         throw std::invalid_argument(text);
+      return value;
+   };
+   auto toBool = [strict](const char* text)
+   {
+      std::string value(text);
+      if (strict && value != "true" && value != "false")
+         throw std::invalid_argument(text);
+      return value == "true";
    };
 
-   loadElement("ComPortName", [this](const char* text) { SetComPortName(text); });
-   loadElement("ComPortBaudRate", [this](const char* text) { SetComPortBaudRate(std::stoi(text)); });
-   loadElement("ComPortDataBits", [this](const char* text) { SetComPortDataBits(std::stoi(text)); });
-   loadElement("ComPortTimeOutMs", [this](const char* text) { SetComPortTimeOutMs(std::stoi(text)); });
-   loadElement("ComPortOpenWaitMs", [this](const char* text) { SetComPortOpenWaitMs(std::stoi(text)); });
-   loadElement("ComPortHandshakeStartWaitMs", [this](const char* text) { SetComPortHandshakeStartWaitMs(std::stoi(text)); });
-   loadElement("ComPortHandshakeEndWaitMs", [this](const char* text) { SetComPortHandshakeEndWaitMs(std::stoi(text)); });
-   loadElement("ComPortDtrEnable", [this](const char* text) { SetComPortDtrEnable(std::string(text) == "true"); });
+   loadElement("ComPortName", [&](const char* text) { SetComPortName(text); });
+   loadElement("ComPortBaudRate", [&](const char* text) { SetComPortBaudRate(toInt(text)); });
+   loadElement("ComPortDataBits", [&](const char* text) { SetComPortDataBits(toInt(text)); });
+   loadElement("ComPortTimeOutMs", [&](const char* text) { SetComPortTimeOutMs(toInt(text)); });
+   loadElement("ComPortOpenWaitMs", [&](const char* text) { SetComPortOpenWaitMs(toInt(text)); });
+   loadElement("ComPortHandshakeStartWaitMs", [&](const char* text) { SetComPortHandshakeStartWaitMs(toInt(text)); });
+   loadElement("ComPortHandshakeEndWaitMs", [&](const char* text) { SetComPortHandshakeEndWaitMs(toInt(text)); });
+   loadElement("ComPortDtrEnable", [&](const char* text) { SetComPortDtrEnable(toBool(text)); });
 
    loadElement("ComPortParity",
-      [this](const char* text)
+      [&](const char* text)
       {
          std::string parity = StringExtensions::ToLower(text);
          if (parity == "none")
@@ -631,10 +650,12 @@ bool TeensyStripController::FromXml(const tinyxml2::XMLElement* element)
             SetComPortParity(Parity::Mark);
          else if (parity == "space")
             SetComPortParity(Parity::Space);
+         else if (strict)
+            throw std::invalid_argument(text);
       });
 
    loadElement("ComPortStopBits",
-      [this](const char* text)
+      [&](const char* text)
       {
          std::string stopBits = StringExtensions::ToLower(text);
          if (stopBits == "0" || stopBits == "none")
@@ -645,20 +666,22 @@ bool TeensyStripController::FromXml(const tinyxml2::XMLElement* element)
             SetComPortStopBits(StopBits::Two);
          else if (stopBits == "3" || stopBits == "onepointfive")
             SetComPortStopBits(StopBits::OnePointFive);
+         else if (strict)
+            throw std::invalid_argument(text);
       });
 
-   loadElement("NumberOfLedsStrip1", [this](const char* text) { SetNumberOfLedsStrip1(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip2", [this](const char* text) { SetNumberOfLedsStrip2(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip3", [this](const char* text) { SetNumberOfLedsStrip3(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip4", [this](const char* text) { SetNumberOfLedsStrip4(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip5", [this](const char* text) { SetNumberOfLedsStrip5(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip6", [this](const char* text) { SetNumberOfLedsStrip6(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip7", [this](const char* text) { SetNumberOfLedsStrip7(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip8", [this](const char* text) { SetNumberOfLedsStrip8(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip9", [this](const char* text) { SetNumberOfLedsStrip9(std::stoi(text)); });
-   loadElement("NumberOfLedsStrip10", [this](const char* text) { SetNumberOfLedsStrip10(std::stoi(text)); });
+   loadElement("NumberOfLedsStrip1", [&](const char* text) { SetNumberOfLedsStrip1(toInt(text)); });
+   loadElement("NumberOfLedsStrip2", [&](const char* text) { SetNumberOfLedsStrip2(toInt(text)); });
+   loadElement("NumberOfLedsStrip3", [&](const char* text) { SetNumberOfLedsStrip3(toInt(text)); });
+   loadElement("NumberOfLedsStrip4", [&](const char* text) { SetNumberOfLedsStrip4(toInt(text)); });
+   loadElement("NumberOfLedsStrip5", [&](const char* text) { SetNumberOfLedsStrip5(toInt(text)); });
+   loadElement("NumberOfLedsStrip6", [&](const char* text) { SetNumberOfLedsStrip6(toInt(text)); });
+   loadElement("NumberOfLedsStrip7", [&](const char* text) { SetNumberOfLedsStrip7(toInt(text)); });
+   loadElement("NumberOfLedsStrip8", [&](const char* text) { SetNumberOfLedsStrip8(toInt(text)); });
+   loadElement("NumberOfLedsStrip9", [&](const char* text) { SetNumberOfLedsStrip9(toInt(text)); });
+   loadElement("NumberOfLedsStrip10", [&](const char* text) { SetNumberOfLedsStrip10(toInt(text)); });
 
-   return true;
+   return loaded;
 }
 
 tinyxml2::XMLElement* TeensyStripController::ToXml(tinyxml2::XMLDocument& doc) const
