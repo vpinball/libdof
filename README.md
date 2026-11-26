@@ -117,6 +117,35 @@ void test()
 }
 ```
 
+#### Strict setup
+
+By default, libdof carries on when its configuration cannot be used: a missing or invalid global config is replaced by the defaults, a cabinet config that cannot be loaded falls back to auto-configuration, and an output controller that cannot be read is skipped. A host that ships its own configuration can ask for these cases to fail instead:
+
+```cpp
+DOF::Config::GetInstance()->SetStrictSetup(true);
+
+try
+{
+   pDof->Init("", "ij_l7");
+}
+catch (const std::exception& e)
+{
+   printf("DOF setup failed: %s\n", e.what());
+}
+```
+
+With strict setup on, `Init` throws, with the cause in the message, when:
+
+- the global config (`directoutputconfig/GlobalConfig_B2SServer.xml` under the base path) is missing or cannot be loaded
+- the cabinet config that the global config names does not exist or cannot be parsed
+- an output controller of a known type in the cabinet config cannot be read from its XML
+
+A global config that names no cabinet config still auto-configures, and an output controller of an unknown type is still skipped with a warning.
+
+- **When to set it:** before `Init`. It is read each time `Init` runs, and it applies to the whole process.
+- **Whole-value checks:** only the Teensy and WemosD1 strip controllers reject a setting that does not parse completely, such as a `ComPortBaudRate` of `9600oops`. Other controllers fail only where they already refuse to load.
+- **Default:** off. `IsStrictSetup()` returns the current value.
+
 ## Building:
 
 #### Windows (x64)
