@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstring>
 
+#include "DOF/Config.h"
 #include "Log.h"
 #include "Logger.h"
 #include "cab/Cabinet.h"
@@ -29,6 +30,17 @@
 
 namespace DOF
 {
+
+namespace
+{
+
+std::atomic<bool> s_strictSetup { false };
+
+}
+
+void Config::SetStrictSetup(bool strictSetup) { s_strictSetup = strictSetup; }
+
+bool Config::IsStrictSetup() const { return s_strictSetup; }
 
 Pinball::Pinball()
    : m_table(new Table())
@@ -68,6 +80,11 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
          GlobalConfig* newGlobalConfig = GlobalConfig::GetGlobalConfigFromConfigXmlFile(globalConfigFile->FullName());
          if (!newGlobalConfig)
          {
+            if (Config::GetInstance()->IsStrictSetup())
+            {
+               delete globalConfigFile;
+               throw std::runtime_error("the global config " + globalConfigFileName + " could not be loaded");
+            }
             Log::Write("No global config file loaded");
             globalConfigLoaded = false;
 
@@ -80,6 +97,8 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
       }
       else
       {
+         if (Config::GetInstance()->IsStrictSetup())
+            throw std::runtime_error("no global config was given");
          delete m_globalConfig;
          m_globalConfig = new GlobalConfig();
          m_globalConfig->SetGlobalConfigFilename(globalConfigFileName);
@@ -176,13 +195,31 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
             catch (const std::exception& e)
             {
                Log::Exception(StringExtensions::Build("An exception occured when loading cabinet config file: {0} - {1}", cabinetConfigFile->FullName(), e.what()));
+               if (Config::GetInstance()->IsStrictSetup())
+               {
+                  std::string name = cabinetConfigFile->FullName();
+                  delete cabinetConfigFile;
+                  throw std::runtime_error(StringExtensions::Build("the cabinet config {0} could not be loaded: {1}", name, e.what()));
+               }
             }
          }
          else
          {
             Log::Warning(StringExtensions::Build("Cabinet config file {0} does not exist.", cabinetConfigFile->FullName()));
+            if (Config::GetInstance()->IsStrictSetup())
+            {
+               std::string name = cabinetConfigFile->FullName();
+               delete cabinetConfigFile;
+               throw std::runtime_error(StringExtensions::Build("the cabinet config {0} does not exist", name));
+            }
          }
          delete cabinetConfigFile;
+      }
+      else if (Config::GetInstance()->IsStrictSetup() && !StringExtensions::IsNullOrWhiteSpace(m_globalConfig->GetCabinetConfigFilePattern().GetPattern()))
+      {
+         std::string pattern = m_globalConfig->GetCabinetConfigFilePattern().GetPattern();
+         Log::Warning(StringExtensions::Build("No cabinet config file matches {0}.", pattern));
+         throw std::runtime_error(StringExtensions::Build("the cabinet config {0} does not exist", pattern));
       }
       if (m_cabinet == nullptr)
       {
