@@ -1,8 +1,10 @@
 #include "WemosD1StripController.h"
+#include "DOF/Config.h"
 #include "../../../Log.h"
 #include "../../../general/StringExtensions.h"
 #include <chrono>
 #include <climits>
+#include <stdexcept>
 #include <thread>
 
 namespace DOF
@@ -166,6 +168,8 @@ bool WemosD1MPStripController::FromXml(const tinyxml2::XMLElement* element)
    if (!TeensyStripController::FromXml(element))
       return false;
 
+   bool strict = Config::GetInstance()->IsStrictSetup();
+   bool loaded = true;
    auto loadElement = [&](const char* name, auto setter)
    {
       const tinyxml2::XMLElement* elem = element->FirstChildElement(name);
@@ -177,17 +181,24 @@ bool WemosD1MPStripController::FromXml(const tinyxml2::XMLElement* element)
          }
          catch (...)
          {
-            return false;
+            if (strict)
+               loaded = false;
          }
       }
-      return true;
+   };
+   auto toBool = [strict](const char* text)
+   {
+      std::string value(text);
+      if (strict && value != "true" && value != "false")
+         throw std::invalid_argument(text);
+      return value == "true";
    };
 
-   loadElement("SendPerLedstripLength", [this](const char* text) { SetSendPerLedstripLength(std::string(text) == "true"); });
-   loadElement("UseCompression", [this](const char* text) { SetUseCompression(std::string(text) == "true"); });
-   loadElement("TestOnConnect", [this](const char* text) { SetTestOnConnect(std::string(text) == "true"); });
+   loadElement("SendPerLedstripLength", [&](const char* text) { SetSendPerLedstripLength(toBool(text)); });
+   loadElement("UseCompression", [&](const char* text) { SetUseCompression(toBool(text)); });
+   loadElement("TestOnConnect", [&](const char* text) { SetTestOnConnect(toBool(text)); });
 
-   return true;
+   return loaded;
 }
 
 tinyxml2::XMLElement* WemosD1MPStripController::ToXml(tinyxml2::XMLDocument& doc) const
