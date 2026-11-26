@@ -259,15 +259,18 @@ void PacDrive::PacDriveUnit::SendPacDriveUpdate()
       return;
 
    std::lock_guard<std::mutex> updateLock(m_pacDriveUpdateLocker);
-   std::lock_guard<std::mutex> valueLock(m_valueChangeLocker);
+   uint16_t data;
+   {
+      std::lock_guard<std::mutex> valueLock(m_valueChangeLocker);
+      if (!m_updateRequired)
+         return;
 
-   if (!m_updateRequired)
-      return;
+      CopyNewToCurrent();
+      m_updateRequired = false;
+      data = m_currentValue;
+   }
 
-   CopyNewToCurrent();
-   m_updateRequired = false;
-
-   PacDriveSetLEDStates(m_currentValue);
+   PacDriveSetLEDStates(data);
 }
 
 void PacDrive::PacDriveUnit::CopyNewToCurrent() { m_currentValue = m_newValue; }
