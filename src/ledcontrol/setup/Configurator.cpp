@@ -859,6 +859,8 @@ void Configurator::SetupTable(
                         "Ledwiz {0:00} Column {1:00} Setting {2:00} AnalogToyValueEffect", std::to_string(ledWizNr), std::to_string(tcc->GetNumber()), std::to_string(settingNumber));
                      analogEffect->SetName(effectName);
                      analogEffect->SetToyName(toy->GetName());
+                     int layer = tcs->HasLayer() ? tcs->GetLayer() : settingNumber;
+                     analogEffect->SetLayerNr(layer);
 
                      AnalogAlpha activeValue(MathExtensions::Limit(tcs->GetIntensity(), 0, 255), 255);
                      AnalogAlpha inactiveValue = activeValue;
