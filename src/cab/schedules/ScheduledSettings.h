@@ -31,13 +31,12 @@ public:
    virtual tinyxml2::XMLElement* ToXml(tinyxml2::XMLDocument& doc) const override;
    virtual bool FromXml(const tinyxml2::XMLElement* element) override;
    virtual std::string GetXmlElementName() const override { return "ScheduledSettings"; }
+   void Clear();
 
 private:
    ScheduledSettings() = default;
    ScheduledSettings(const ScheduledSettings&) = delete;
    ScheduledSettings& operator=(const ScheduledSettings&) = delete;
-
-   void Clear();
 };
 
 }

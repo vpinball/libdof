@@ -12,6 +12,8 @@
 #include "cab/CabinetOwner.h"
 #include "cab/out/OutputControllerList.h"
 #include "cab/overrides/TableOverrideSettings.h"
+#include "cab/schedules/ScheduledSettings.h"
+#include "cab/sequencer/SequentialOutputSettings.h"
 #include "cab/toys/ToyList.h"
 #include "globalconfiguration/GlobalConfig.h"
 #include "pinballsupport/AlarmHandler.h"
@@ -51,6 +53,9 @@ Pinball::~Pinball()
 void Pinball::Setup(const std::string& globalConfigFileName, const std::string& tableFilename, const std::string& romName)
 {
    bool globalConfigLoaded = true;
+
+   ScheduledSettings::GetInstance().Clear();
+   SequentialOutputSettings::GetInstance().Clear();
 
    try
    {
