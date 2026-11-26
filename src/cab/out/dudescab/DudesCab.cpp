@@ -225,7 +225,7 @@ void DudesCab::DisconnectFromController()
 {
    if (m_inUseState == InUseState::Running && m_dev)
    {
-      m_dev->AllOff();
+      m_disconnectTurnedOff = m_dev->AllOff();
       m_dev = nullptr;
       m_cacheInvalid = true;
    }

@@ -270,6 +270,7 @@ void FT245RBitbangController::UpdaterThreadDoIt()
       }
    }
 
+   std::string finishError;
    try
    {
       SendUpdate(0);
@@ -277,9 +278,10 @@ void FT245RBitbangController::UpdaterThreadDoIt()
    catch (const std::exception& e)
    {
       Log::Exception(StringExtensions::Build("Final update to turn off all output for FTDI chip {0} failed.", m_serialNumber));
-      m_finishError = StringExtensions::Build("FT245RBitbangController {0} could not turn its outputs off: {1}", GetName(), e.what());
+      finishError = StringExtensions::Build("FT245RBitbangController {0} could not turn its outputs off: {1}", GetName(), e.what());
    }
-   Disconnect();
+   if (!Disconnect() && !finishError.empty())
+      m_finishError = finishError;
    m_updaterThreadFinished = true;
 }
 
@@ -361,15 +363,17 @@ void FT245RBitbangController::SendUpdate(uint8_t outputData)
       throw std::runtime_error(StringExtensions::Build("FTDI chip {0} is not connected", m_serialNumber));
 }
 
-void FT245RBitbangController::Disconnect()
+bool FT245RBitbangController::Disconnect()
 {
    std::lock_guard<std::recursive_mutex> lock(m_ftdiLocker);
 
+   bool turnedOff = false;
    if (m_ftdi)
    {
       try
       {
          SendUpdate(0);
+         turnedOff = true;
       }
       catch (...)
       {
@@ -390,6 +394,7 @@ void FT245RBitbangController::Disconnect()
       m_ftdi = nullptr;
       Log::Write(StringExtensions::Build("Connection to FTDI chip {0} closed.", m_serialNumber));
    }
+   return turnedOff;
 }
 
 tinyxml2::XMLElement* FT245RBitbangController::ToXml(tinyxml2::XMLDocument& doc) const

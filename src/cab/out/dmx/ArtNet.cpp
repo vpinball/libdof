@@ -93,6 +93,7 @@ void ArtNet::DisconnectFromController()
          sent = false;
       }
       m_engine = nullptr;
+      m_disconnectTurnedOff = sent;
    }
    if (!sent)
       throw std::runtime_error("the Art-Net packet that turns the outputs off was not sent");

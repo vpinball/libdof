@@ -377,7 +377,10 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
 
       try
       {
+         m_disconnectTurnedOff = false;
          DisconnectFromController();
+         if (m_disconnectTurnedOff && !turnedOff)
+            m_finishError.clear();
       }
       catch (const std::exception& e)
       {

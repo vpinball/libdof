@@ -48,6 +48,7 @@ protected:
    virtual void UpdateOutputs(const std::vector<uint8_t>& outputValues) = 0;
    bool m_forceFullTransfer = false;
    bool m_transferSkipped = false;
+   bool m_disconnectTurnedOff = false;
 
 
    void InitUpdaterThread();
