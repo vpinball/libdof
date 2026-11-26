@@ -1228,27 +1228,25 @@ void Configurator::AssignEffectToTableElements(Table* table, const std::vector<s
             default: validType = false; break;
             }
 
+            int number = 0;
+            if (validType && !StringExtensions::TryParseInt(numberStr, number))
+            {
+               Log::Warning(StringExtensions::Build("Table element {0} is not a valid table element descriptor.", descriptor));
+               validType = false;
+            }
+
             if (validType)
             {
-               try
+               TableElementData elementData(elementType, number, 0);
+               tableElements->UpdateState(&elementData);
+
+               for (TableElement* te : *tableElements)
                {
-                  int number = std::stoi(numberStr);
-
-                  TableElementData elementData(elementType, number, 0);
-                  tableElements->UpdateState(&elementData);
-
-                  for (TableElement* te : *tableElements)
+                  if (te->GetTableElementType() == elementType && te->GetNumber() == number)
                   {
-                     if (te->GetTableElementType() == elementType && te->GetNumber() == number)
-                     {
-                        tableElement = te;
-                        break;
-                     }
+                     tableElement = te;
+                     break;
                   }
-               }
-               catch (const std::exception&)
-               {
-                  continue;
                }
             }
          }

@@ -13,6 +13,29 @@
 namespace DOF
 {
 
+static bool ParseTableElementVariable(const std::string& variable, TableElementTypeEnum& elementType, int& number)
+{
+   if (variable.length() < 2)
+      return false;
+
+   switch (variable[0])
+   {
+   case 'L': elementType = TableElementTypeEnum::Lamp; break;
+   case 'S': elementType = TableElementTypeEnum::Solenoid; break;
+   case 'W': elementType = TableElementTypeEnum::Switch; break;
+   case 'G': elementType = TableElementTypeEnum::GIString; break;
+   case 'M': elementType = TableElementTypeEnum::Mech; break;
+   case 'N': elementType = TableElementTypeEnum::GetMech; break;
+   case 'E': elementType = TableElementTypeEnum::EMTable; break;
+   case 'D': elementType = TableElementTypeEnum::LED; break;
+   case 'C': elementType = TableElementTypeEnum::Score; break;
+   case 'B': elementType = TableElementTypeEnum::ScoreDigit; break;
+   default: return false;
+   }
+
+   return StringExtensions::TryParseInt(variable.substr(1), number);
+}
+
 TableElementConditionEffect::TableElementConditionEffect()
    : m_conditionExpressionValid(false)
    , m_table(nullptr)
@@ -84,6 +107,17 @@ void TableElementConditionEffect::InitCondition()
    m_variables.clear();
    m_symbolTable->clear();
 
+   for (const std::string& var : variables)
+   {
+      TableElementTypeEnum elementType;
+      int number;
+      if (!StringExtensions::StartsWith(var, "NamedElement_") && !ParseTableElementVariable(var, elementType, number))
+      {
+         Log::Warning(StringExtensions::Build("The condition {0} of effect {1} refers to {2}, which is not a table element.", m_condition, NamedItemBase::GetName(), var));
+         return;
+      }
+   }
+
    std::string transformedCondition = StringExtensions::Replace(m_condition, std::string(1, (char)TableElementTypeEnum::NamedElement), "NamedElement_");
 
    for (const std::string& var : variables)
@@ -131,42 +165,20 @@ void TableElementConditionEffect::UpdateVariableValues()
             }
          }
       }
-      else if (varName.length() >= 2)
+      else
       {
-         char typeChar = varName[0];
-         std::string numberStr = varName.substr(1);
+         TableElementTypeEnum elementType;
+         int number;
+         if (!ParseTableElementVariable(varName, elementType, number))
+            continue;
 
-         TableElementTypeEnum elementType = TableElementTypeEnum::Unknown;
-         switch (typeChar)
+         for (TableElement* element : *tableElements)
          {
-         case 'L': elementType = TableElementTypeEnum::Lamp; break;
-         case 'S': elementType = TableElementTypeEnum::Solenoid; break;
-         case 'W': elementType = TableElementTypeEnum::Switch; break;
-         case 'G': elementType = TableElementTypeEnum::GIString; break;
-         case 'M': elementType = TableElementTypeEnum::Mech; break;
-         case 'N': elementType = TableElementTypeEnum::GetMech; break;
-         case 'E': elementType = TableElementTypeEnum::EMTable; break;
-         case 'D': elementType = TableElementTypeEnum::LED; break;
-         case 'C': elementType = TableElementTypeEnum::Score; break;
-         case 'B': elementType = TableElementTypeEnum::ScoreDigit; break;
-         default: continue;
-         }
-
-         try
-         {
-            int number = std::stoi(numberStr);
-
-            for (TableElement* element : *tableElements)
+            if (element->GetTableElementType() == elementType && element->GetNumber() == number)
             {
-               if (element->GetTableElementType() == elementType && element->GetNumber() == number)
-               {
-                  varValue = static_cast<double>(element->GetValue());
-                  break;
-               }
+               varValue = static_cast<double>(element->GetValue());
+               break;
             }
-         }
-         catch (const std::exception&)
-         {
          }
       }
    }
