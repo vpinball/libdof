@@ -183,11 +183,7 @@ void PacUIO::PacUIOUnit::UpdateValue(IOutput* output)
    }
 }
 
-void PacUIO::PacUIOUnit::CopyNewToCurrent()
-{
-   std::lock_guard<std::mutex> lock(m_valueChangeLocker);
-   std::copy(m_newValue, m_newValue + 96, m_currentValue);
-}
+void PacUIO::PacUIOUnit::CopyNewToCurrent() { std::copy(m_newValue, m_newValue + 96, m_currentValue); }
 
 bool PacUIO::PacUIOUnit::IsUpdaterThreadAlive() { return m_pacUIOUpdater.joinable(); }
 
@@ -327,11 +323,14 @@ void PacUIO::PacUIOUnit::SendPacUIOUpdate()
 
    if (m_forceFullUpdate || (intensityUpdatesRequired + stateUpdatesRequired) > 50)
    {
-      m_pdSingleton->PacLed64SetLEDIntensities(m_index, m_currentValue);
-      std::copy(m_currentValue, m_currentValue + 96, m_lastValueSent);
-      for (int i = 0; i < 96; i++)
+      if (m_pdSingleton->PacLed64SetLEDIntensities(m_index, m_currentValue))
       {
-         m_lastStateSent[i] = (m_lastValueSent[i] > 0);
+         std::copy(m_currentValue, m_currentValue + 96, m_lastValueSent);
+         for (int i = 0; i < 96; i++)
+         {
+            m_lastStateSent[i] = (m_lastValueSent[i] > 0);
+         }
+         m_forceFullUpdate = false;
       }
    }
    else
