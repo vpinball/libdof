@@ -153,13 +153,25 @@ PacUIO::PacUIOUnit::PacUIOUnit(int id)
    std::fill_n(m_currentValue, 96, 0);
    std::fill_n(m_lastValueSent, 96, 0);
    std::fill_n(m_lastStateSent, 96, false);
-
-   InitUnit();
 }
 
 PacUIO::PacUIOUnit::~PacUIOUnit() { TerminatePacUIOUpdaterThread(); }
 
-void PacUIO::PacUIOUnit::Init(Cabinet* cabinet) { StartPacUIOUpdaterThread(); }
+void PacUIO::PacUIOUnit::Init(Cabinet* cabinet)
+{
+   if (!IsUpdaterThreadAlive())
+   {
+      m_index = m_pdSingleton->PacUIOGetIndexForDeviceId(m_id);
+      std::lock_guard<std::mutex> lock(m_valueChangeLocker);
+      std::fill_n(m_newValue, 96, 0);
+      std::fill_n(m_currentValue, 96, 0);
+      std::fill_n(m_lastValueSent, 96, 0);
+      std::fill_n(m_lastStateSent, 96, false);
+      m_updateRequired = true;
+      m_forceFullUpdate = true;
+   }
+   StartPacUIOUpdaterThread();
+}
 
 void PacUIO::PacUIOUnit::Finish()
 {

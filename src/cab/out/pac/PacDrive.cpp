@@ -129,6 +129,12 @@ PacDrive::PacDriveUnit::~PacDriveUnit() { TerminatePacDriveUpdaterThread(); }
 void PacDrive::PacDriveUnit::Init(Cabinet* cabinet)
 {
    m_index = PacDriveSingleton::GetInstance().PacDriveGetIndex();
+   {
+      std::lock_guard<std::mutex> lock(m_valueChangeLocker);
+      m_newValue = 0;
+      m_currentValue = 0;
+      m_updateRequired = true;
+   }
    if (m_index >= 0)
    {
       StartPacDriveUpdaterThread();
