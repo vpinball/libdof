@@ -4,6 +4,7 @@
 #include "../../out/IOutput.h"
 #include "../../../Log.h"
 #include "../../../general/StringExtensions.h"
+#include "AlphaMappingTable.h"
 
 #include <algorithm>
 
@@ -37,10 +38,48 @@ void RGBAToy::Init(Cabinet* cabinet)
    Reset();
 }
 
+RGBColor RGBAToy::GetResultingData()
+{
+   if (m_layers.GetLayerNumbers().size() > 0)
+   {
+      float red = 0;
+      float green = 0;
+      float blue = 0;
+      std::vector<int> layerNumbers = m_layers.GetLayerNumbers();
+      for (int layerNumber : layerNumbers)
+      {
+         RGBAColor* layer = m_layers.GetLayer(layerNumber, 1);
+         if (layer == nullptr)
+            continue;
+         const RGBAColor& layerColor = layer[0];
+         int alpha = layerColor.GetAlpha();
+         if (alpha != 0)
+         {
+            int negAlpha = 255 - alpha;
+            red = AlphaMappingTable::AlphaMapping[negAlpha][(int)red] + AlphaMappingTable::AlphaMapping[alpha][layerColor.GetRed()];
+            green = AlphaMappingTable::AlphaMapping[negAlpha][(int)green] + AlphaMappingTable::AlphaMapping[alpha][layerColor.GetGreen()];
+            blue = AlphaMappingTable::AlphaMapping[negAlpha][(int)blue] + AlphaMappingTable::AlphaMapping[alpha][layerColor.GetBlue()];
+         }
+      }
+
+      return RGBColor((int)red, (int)green, (int)blue);
+   }
+   else
+   {
+      return RGBColor(0, 0, 0);
+   }
+}
+
 void RGBAToy::Reset()
 {
-   m_currentColor = RGBAColor(0, 0, 0, 255);
-   UpdateOutputs();
+   for (int layerNumber : m_layers.GetLayerNumbers())
+      m_layers.GetLayer(layerNumber, 1)[0] = RGBAColor();
+   if (m_redOutput != nullptr)
+      m_redOutput->SetOutput(0);
+   if (m_greenOutput != nullptr)
+      m_greenOutput->SetOutput(0);
+   if (m_blueOutput != nullptr)
+      m_blueOutput->SetOutput(0);
 }
 
 void RGBAToy::Finish()
@@ -49,52 +88,20 @@ void RGBAToy::Finish()
    Reset();
 }
 
-void RGBAToy::UpdateToy()
-{
-   MergeLayers();
-
-   UpdateOutputs();
-}
+void RGBAToy::UpdateToy() { UpdateOutputs(); }
 
 void RGBAToy::UpdateOutputs()
 {
+   RGBColor rgb = GetResultingData();
+
    if (m_redOutput != nullptr)
-      m_redOutput->SetOutput(static_cast<uint8_t>(m_currentColor.GetRed()));
+      m_redOutput->SetOutput(static_cast<uint8_t>(rgb.GetRed()));
 
    if (m_greenOutput != nullptr)
-      m_greenOutput->SetOutput(static_cast<uint8_t>(m_currentColor.GetGreen()));
+      m_greenOutput->SetOutput(static_cast<uint8_t>(rgb.GetGreen()));
 
    if (m_blueOutput != nullptr)
-      m_blueOutput->SetOutput(static_cast<uint8_t>(m_currentColor.GetBlue()));
-}
-
-void RGBAToy::MergeLayers()
-{
-   m_currentColor = RGBAColor(0, 0, 0, 255);
-
-   std::vector<int> layerNumbers = m_layers.GetLayerNumbers();
-   std::sort(layerNumbers.begin(), layerNumbers.end());
-
-   for (int layerNumber : layerNumbers)
-   {
-      RGBAColor* layer = m_layers.GetLayer(layerNumber, 1);
-      if (layer != nullptr)
-      {
-         const RGBAColor& layerColor = layer[0];
-
-         if (layerColor.GetAlpha() > 0)
-         {
-            float alpha = layerColor.GetAlpha() / 255.0f;
-            float invAlpha = 1.0f - alpha;
-
-            int red = static_cast<int>(m_currentColor.GetRed() * invAlpha + layerColor.GetRed() * alpha);
-            int green = static_cast<int>(m_currentColor.GetGreen() * invAlpha + layerColor.GetGreen() * alpha);
-            int blue = static_cast<int>(m_currentColor.GetBlue() * invAlpha + layerColor.GetBlue() * alpha);
-
-            m_currentColor.SetRGBA(red, green, blue, 255);
-         }
-      }
-   }
+      m_blueOutput->SetOutput(static_cast<uint8_t>(rgb.GetBlue()));
 }
 
 }
