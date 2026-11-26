@@ -85,7 +85,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
    }
    catch (const std::exception& e)
    {
-      throw std::runtime_error("DirectOutput framework could not initialize global config.");
+      throw std::runtime_error(std::string("DirectOutput framework could not initialize global config.\n Inner exception: ") + e.what());
    }
 
    try
@@ -111,7 +111,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
    }
    catch (const std::exception& e)
    {
-      throw std::runtime_error("DirectOutput framework could initialize the log file.");
+      throw std::runtime_error(std::string("DirectOutput framework could not initialize the log file.\n Inner exception: ") + e.what());
    }
 
    Log::AfterInit();
@@ -149,6 +149,8 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
             try
             {
                m_cabinet = Cabinet::GetCabinetFromConfigXmlFile(cabinetConfigFile);
+               if (!m_cabinet)
+                  throw std::runtime_error("the file is not a valid cabinet config");
 
                Log::Write(StringExtensions::Build("{0} output controller definitions and {1} toy definitions loaded from cabinet config.",
                   std::to_string(static_cast<int>(m_cabinet->GetOutputControllers()->size())), std::to_string(static_cast<int>(m_cabinet->GetToys()->size()))));
@@ -206,6 +208,8 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
             try
             {
                Table* newTable = Table::GetTableFromConfigXmlFile(tableFile->FullName());
+               if (!newTable)
+                  throw std::runtime_error(StringExtensions::Build("{0} is not a valid table config", tableFile->FullName()));
                delete m_table;
                m_table = newTable;
                m_table->SetTableConfigurationFilename(tableConfigFile->FullName());
@@ -213,7 +217,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
             }
             catch (const std::exception& e)
             {
-               Log::Exception(StringExtensions::Build("An exception occured when loading table config: {0} - {1}", tableConfigFile->FullName(), e.what()));
+               Log::Exception(StringExtensions::Build("The table config {0} was skipped: {1}. Will use the LedControl config(s).", tableConfigFile->FullName(), e.what()));
             }
             if (m_table->IsAddLedControlConfig())
             {
@@ -319,7 +323,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
    catch (const std::exception& e)
    {
       Log::Exception(StringExtensions::Build("DirectOutput framework has encountered an exception during setup: {0}", e.what()));
-      throw std::runtime_error("DirectOutput framework has encountered a exception during setup.");
+      throw std::runtime_error(std::string("DirectOutput framework has encountered a exception during setup.\n Inner exception: ") + e.what());
    }
 }
 
@@ -349,7 +353,7 @@ void Pinball::Init()
    catch (const std::exception& e)
    {
       Log::Exception(StringExtensions::Build("DirectOutput framework has encountered an exception during initialization: {0}", e.what()));
-      throw std::runtime_error("DirectOutput framework has encountered a exception during initialization.");
+      throw std::runtime_error(std::string("DirectOutput framework has encountered a exception during initialization.\n Inner exception: ") + e.what());
    }
 }
 
