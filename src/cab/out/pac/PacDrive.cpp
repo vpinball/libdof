@@ -34,12 +34,15 @@ void PacDrive::Init(Cabinet* cabinet)
 
 void PacDrive::Finish()
 {
+   bool shutdownFailed = false;
    if (s_pacDriveInstance)
    {
       s_pacDriveInstance->Finish();
-      s_pacDriveInstance->ShutdownLighting();
+      shutdownFailed = !s_pacDriveInstance->ShutdownLighting();
    }
    Log::Write("PacDrive finished and updater thread stopped.");
+   if (shutdownFailed)
+      throw std::runtime_error("PacDrive could not turn its outputs off");
 }
 
 void PacDrive::Update()
@@ -141,11 +144,7 @@ void PacDrive::PacDriveUnit::Init(Cabinet* cabinet)
    }
 }
 
-void PacDrive::PacDriveUnit::Finish()
-{
-   TerminatePacDriveUpdaterThread();
-   ShutdownLighting();
-}
+void PacDrive::PacDriveUnit::Finish() { TerminatePacDriveUpdaterThread(); }
 
 void PacDrive::PacDriveUnit::UpdateValue(IOutput* output)
 {
@@ -177,13 +176,15 @@ void PacDrive::PacDriveUnit::TriggerPacDriveUpdaterThread()
    m_updateCondition.notify_one();
 }
 
-void PacDrive::PacDriveUnit::ShutdownLighting()
+bool PacDrive::PacDriveUnit::ShutdownLighting()
 {
+   bool ok = true;
    if (m_index >= 0)
    {
-      PacDriveSetLEDStates(0);
+      ok = PacDriveSetLEDStates(0);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
    }
+   return ok;
 }
 
 void PacDrive::PacDriveUnit::StartPacDriveUpdaterThread()
@@ -270,7 +271,11 @@ void PacDrive::PacDriveUnit::SendPacDriveUpdate()
       data = m_currentValue;
    }
 
-   PacDriveSetLEDStates(data);
+   if (!PacDriveSetLEDStates(data))
+   {
+      std::lock_guard<std::mutex> valueLock(m_valueChangeLocker);
+      m_updateRequired = true;
+   }
 }
 
 void PacDrive::PacDriveUnit::CopyNewToCurrent() { m_currentValue = m_newValue; }

@@ -236,7 +236,15 @@ void PacLed64::PacLed64Unit::Init(Cabinet* cabinet)
 void PacLed64::PacLed64Unit::Finish()
 {
    TerminatePacLed64UpdaterThread();
-   ShutdownLighting();
+   try
+   {
+      ShutdownLighting();
+   }
+   catch (...)
+   {
+      m_index = -1;
+      throw;
+   }
 
    m_index = -1;
 }
@@ -274,7 +282,8 @@ void PacLed64::PacLed64Unit::ShutdownLighting()
    if (IsPresent())
    {
       EnforceMinUpdateInterval();
-      PacDriveSingleton::GetInstance().PacLed64SetLEDStates(m_index, 0, 0);
+      if (!PacDriveSingleton::GetInstance().PacLed64SetLEDStates(m_index, 0, 0))
+         throw std::runtime_error("PacLed64: turning the outputs off failed");
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
       std::fill(m_lastStateSent.begin(), m_lastStateSent.end(), false);
    }

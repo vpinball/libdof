@@ -64,7 +64,6 @@ void PacUIO::Finish()
 {
    InitializeUnits();
    s_pacUIOUnits.at(m_id)->Finish();
-   s_pacUIOUnits.at(m_id)->ShutdownLighting();
    Log::Write(StringExtensions::Build("PacUIO Id:{0} finished and updater thread stopped.", std::to_string(m_id)));
 }
 
@@ -349,7 +348,8 @@ void PacUIO::PacUIOUnit::ShutdownLighting()
    Log::Write("PacUIO.ShutdownLighting");
    if (!IsPresent())
       return;
-   m_pdSingleton->PacLed64SetLEDStates(m_index, 0, 0);
+   if (!m_pdSingleton->PacLed64SetLEDStates(m_index, 0, 0))
+      throw std::runtime_error("PacUIO: turning the outputs off failed");
    std::fill_n(m_lastStateSent, 96, false);
 }
 
