@@ -61,6 +61,8 @@ void ArtNet::ConnectToController()
       try
       {
          m_engine = Engine::GetInstance();
+         if (!m_engine->Reopen())
+            throw std::runtime_error("the Art-Net socket could not be opened");
          std::vector<uint8_t> zeroData(DMX_CHANNELS, 0);
          m_engine->SendDMX(m_broadcastAddress, m_universe, zeroData, DMX_CHANNELS);
       }

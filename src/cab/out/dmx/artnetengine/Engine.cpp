@@ -48,6 +48,7 @@ Engine::Engine()
    }
 #endif
 
+   std::lock_guard<std::mutex> lock(m_udpMutex);
    InitializeSocket();
 }
 
@@ -62,8 +63,6 @@ Engine::~Engine()
 
 bool Engine::InitializeSocket()
 {
-   std::lock_guard<std::mutex> lock(m_udpMutex);
-
    try
    {
       m_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -129,12 +128,23 @@ void Engine::CloseSocket()
    }
 }
 
+bool Engine::Reopen()
+{
+   std::lock_guard<std::mutex> lock(m_udpMutex);
+   if (m_socketInitialized && m_socket >= 0)
+      return true;
+   m_sendExceptionCount = 0;
+   return InitializeSocket();
+}
+
 uint8_t Engine::LoByte(int value) const { return static_cast<uint8_t>(value & 0xFF); }
 
 uint8_t Engine::HiByte(int value) const { return static_cast<uint8_t>((value >> 8) & 0xFF); }
 
 void Engine::SendDMX(const std::string& broadcastAddress, short universe, const std::vector<uint8_t>& data, int dataLength)
 {
+   std::lock_guard<std::mutex> lock(m_udpMutex);
+
    if (!m_socketInitialized || m_socket < 0)
    {
       Log::Exception("ArtNet engine socket not initialized");
@@ -169,8 +179,6 @@ void Engine::SendDMX(const std::string& broadcastAddress, short universe, const 
       Log::Exception(StringExtensions::Build("Exception occurred copying DMX data in ArtNet Engine: {0}", e.what()));
       return;
    }
-
-   std::lock_guard<std::mutex> lock(m_udpMutex);
 
    if (m_socketInitialized && m_socket >= 0)
    {
