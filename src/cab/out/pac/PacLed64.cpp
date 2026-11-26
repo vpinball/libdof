@@ -387,15 +387,18 @@ void PacLed64::PacLed64Unit::SendPacLed64Update()
    if (m_forceFullUpdate || updatesRequired > m_fullUpdateThreshold)
    {
       EnforceMinUpdateInterval();
-      PacDriveSingleton::GetInstance().PacLed64SetLEDIntensities(m_index, m_currentValue.data());
+      bool written = PacDriveSingleton::GetInstance().PacLed64SetLEDIntensities(m_index, m_currentValue.data());
       m_lastCommand = std::chrono::steady_clock::now();
 
-      m_lastValueSent = m_currentValue;
-      for (int i = 0; i < 64; i++)
+      if (written)
       {
-         m_lastStateSent[i] = (m_lastValueSent[i] > 0);
+         m_lastValueSent = m_currentValue;
+         for (int i = 0; i < 64; i++)
+         {
+            m_lastStateSent[i] = (m_lastValueSent[i] > 0);
+         }
+         m_forceFullUpdate = false;
       }
-      m_forceFullUpdate = false;
    }
    else
    {
