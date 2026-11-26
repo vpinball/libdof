@@ -63,6 +63,7 @@ private:
    std::condition_variable m_updaterThreadCondition;
    std::atomic<bool> m_keepUpdaterThreadAlive;
    std::atomic<bool> m_updaterThreadFinished;
+   std::string m_finishError;
    int m_firstTryFailCnt;
 
    std::recursive_mutex m_ftdiLocker;

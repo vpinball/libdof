@@ -46,6 +46,7 @@ void FT245RBitbangController::Init(Cabinet* cabinet)
       return;
    }
    AddOutputs();
+   m_finishError.clear();
    InitUpdaterThread();
    Log::Write(StringExtensions::Build("FT245RBitbangController {0} with serial number {1} has been initialized and the updater thread has been started.", GetName(), m_serialNumber));
 }
@@ -54,6 +55,12 @@ void FT245RBitbangController::Finish()
 {
    FinishUpdaterThread();
    Log::Write(StringExtensions::Build("FT245RBitbangController {0} with serial number {1} has been finished and the updater thread has been terminated.", GetName(), m_serialNumber));
+   if (!m_finishError.empty())
+   {
+      std::string error = m_finishError;
+      m_finishError.clear();
+      throw std::runtime_error(error);
+   }
 }
 
 void FT245RBitbangController::Update()
@@ -240,6 +247,7 @@ void FT245RBitbangController::UpdaterThreadDoIt()
          {
             try
             {
+               m_currentValue = m_newValue.load();
                SendUpdate(m_currentValue);
             }
             catch (const std::exception& ee)
@@ -270,6 +278,7 @@ void FT245RBitbangController::UpdaterThreadDoIt()
    catch (const std::exception& e)
    {
       Log::Exception(StringExtensions::Build("Final update to turn off all output for FTDI chip {0} failed.", m_serialNumber));
+      m_finishError = StringExtensions::Build("FT245RBitbangController {0} could not turn its outputs off: {1}", GetName(), e.what());
    }
    Disconnect();
    m_updaterThreadFinished = true;
@@ -349,6 +358,8 @@ void FT245RBitbangController::SendUpdate(uint8_t outputData)
             "Wrong number of written bytes (expected 1, received {0}) was returned when sending data to the FTDI chip {1}", std::to_string(numBytes), m_serialNumber));
       }
    }
+   else
+      throw std::runtime_error(StringExtensions::Build("FTDI chip {0} is not connected", m_serialNumber));
 }
 
 void FT245RBitbangController::Disconnect()
