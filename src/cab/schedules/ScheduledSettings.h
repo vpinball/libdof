@@ -33,6 +33,8 @@ public:
    virtual std::string GetXmlElementName() const override { return "ScheduledSettings"; }
 
 private:
+   std::vector<ScheduledSettingDevice*> m_cacheList;
+
    ScheduledSettings() = default;
    ScheduledSettings(const ScheduledSettings&) = delete;
    ScheduledSettings& operator=(const ScheduledSettings&) = delete;

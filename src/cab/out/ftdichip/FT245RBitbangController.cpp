@@ -97,25 +97,33 @@ void FT245RBitbangController::OnOutputValueChanged(IOutput* output)
    IOutput* on = output;
 
    on = TableOverrideSettings::GetInstance()->GetNewRecalculatedOutput(on, 40, m_id);
+   IOutput* overriddenOutput = on;
 
    on = ScheduledSettings::GetInstance().GetNewRecalculatedOutput(on, 40, m_id);
 
-   if (!MathExtensions::IsBetween(on->GetNumber(), 1, 8))
+   int number = on->GetNumber();
+   uint8_t value = on->GetOutput();
+   if (on != overriddenOutput)
+      delete on;
+   if (overriddenOutput != output)
+      delete overriddenOutput;
+
+   if (!MathExtensions::IsBetween(number, 1, 8))
    {
       throw std::runtime_error(StringExtensions::Build(
          "FT245RBitbangController output numbers must be in the range of 1-8. The supplied output number {0} for FT245RBitbangController with serial number {1} is out of range.",
-         std::to_string(on->GetNumber()), m_serialNumber));
+         std::to_string(number), m_serialNumber));
    }
 
    std::lock_guard<std::mutex> lock(m_valueChangeLocker);
 
-   if (on->GetOutput() > 0)
+   if (value > 0)
    {
-      m_newValue = m_newValue | (1 << (on->GetNumber() - 1));
+      m_newValue = m_newValue | (1 << (number - 1));
    }
    else
    {
-      m_newValue = m_newValue & ~(1 << (on->GetNumber() - 1));
+      m_newValue = m_newValue & ~(1 << (number - 1));
    }
 }
 
