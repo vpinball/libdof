@@ -397,20 +397,6 @@ bool Cabinet::FromXml(const tinyxml2::XMLElement* element)
       m_autoConfigEnabled = (autoConfigText == "true");
    }
 
-   const tinyxml2::XMLElement* scheduledElement = element->FirstChildElement("ScheduledSettings");
-   if (scheduledElement)
-   {
-      ScheduledSettings& scheduledSettings = ScheduledSettings::GetInstance();
-      scheduledSettings.FromXml(scheduledElement);
-   }
-
-   const tinyxml2::XMLElement* sequentialElement = element->FirstChildElement("SequentialOutputSettings");
-   if (sequentialElement)
-   {
-      SequentialOutputSettings& sequentialSettings = SequentialOutputSettings::GetInstance();
-      sequentialSettings.FromXml(sequentialElement);
-   }
-
    const tinyxml2::XMLElement* controllersElement = element->FirstChildElement("OutputControllers");
    if (controllersElement && m_outputControllers)
    {
@@ -468,6 +454,20 @@ bool Cabinet::FromXml(const tinyxml2::XMLElement* element)
             }
          }
       }
+   }
+
+   const tinyxml2::XMLElement* scheduledElement = element->FirstChildElement("ScheduledSettings");
+   if (scheduledElement)
+   {
+      ScheduledSettings& scheduledSettings = ScheduledSettings::GetInstance();
+      scheduledSettings.FromXml(scheduledElement);
+   }
+
+   const tinyxml2::XMLElement* sequentialElement = element->FirstChildElement("SequentialOutputSettings");
+   if (sequentialElement)
+   {
+      SequentialOutputSettings& sequentialSettings = SequentialOutputSettings::GetInstance();
+      sequentialSettings.FromXml(sequentialElement);
    }
 
    return true;
