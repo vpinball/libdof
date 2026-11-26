@@ -4,7 +4,9 @@
 #include "../out/IOutput.h"
 #include "../out/Output.h"
 #include "../../Log.h"
+#include "../../general/StringExtensions.h"
 #include <algorithm>
+#include <sstream>
 
 namespace DOF
 {
@@ -22,6 +24,7 @@ void ScheduledSettings::Clear()
    for (ScheduledSetting* setting : *this)
       delete setting;
    clear();
+   m_cacheList.clear();
 }
 
 ScheduledSetting* ScheduledSettings::GetActiveSchedule(const std::string& configPostfixID, int outputNumber) const
@@ -89,18 +92,6 @@ ScheduledSettingDevice* ScheduledSettings::GetActiveSchedule(IOutput* currentOut
    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
    int deviceID = startingDeviceIndex + currentDeviceIndex;
 
-   static std::vector<int> cacheList;
-
-   static int callCount = 0;
-   if (++callCount > 1000)
-   {
-      cacheList.clear();
-      callCount = 0;
-   }
-
-   if (std::find(cacheList.begin(), cacheList.end(), deviceID) != cacheList.end())
-      return nullptr;
-
    for (ScheduledSetting* scheduledSetting : *this)
    {
       if (!scheduledSetting || !scheduledSetting->IsEnabled())
@@ -130,20 +121,27 @@ ScheduledSettingDevice* ScheduledSettings::GetActiveSchedule(IOutput* currentOut
          if (recalculateOutputValue)
          {
             int outputPercent = device->GetOutputPercent();
-            if (outputPercent != 100)
+            int originalValue = currentOutput->GetOutput();
+            int newValue = (originalValue * outputPercent) / 100;
+            newValue = MathExtensions::Limit(newValue, 0, 255);
+
+            if (std::find(m_cacheList.begin(), m_cacheList.end(), device) == m_cacheList.end())
             {
-               int originalValue = currentOutput->GetOutput();
-               int newValue = (originalValue * outputPercent) / 100;
-               newValue = MathExtensions::Limit(newValue, 0, 255);
+               m_cacheList.push_back(device);
 
-               currentOutput->SetOutput(static_cast<uint8_t>(newValue));
-
-               Log::Debug("ScheduledSettings: Applied " + std::to_string(outputPercent) + "% strength to output " + std::to_string(outputNumber) + " on device " + std::to_string(deviceID)
-                  + " (value: " + std::to_string(originalValue) + " -> " + std::to_string(newValue) + ")");
+               if (originalValue != 0)
+               {
+                  std::ostringstream strengthFactor;
+                  strengthFactor << (outputPercent / 100.0);
+                  Log::Write(StringExtensions::Build("ScheduledSettings.GetActiveSchedule: found active schedule: {0} [{1}-{2}] at channel #{3} on device config {4}, applying strength multiplier: {5}, old value={6}, new value={7}",
+                     { scheduledSetting->GetName(), scheduledSetting->GetClockStart(), scheduledSetting->GetClockEnd(), std::to_string(outputNumber), device->GetName(), strengthFactor.str(),
+                        std::to_string(originalValue), std::to_string(newValue) }));
+               }
             }
-         }
 
-         cacheList.push_back(deviceID);
+            if (outputPercent != 100)
+               currentOutput->SetOutput(static_cast<uint8_t>(newValue));
+         }
 
          return device;
       }

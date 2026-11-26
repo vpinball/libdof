@@ -162,10 +162,11 @@ void LedWiz::OnOutputValueChanged(IOutput* output)
    LedWizUnit* s = s_ledWizUnits.at(m_number);
 
    IOutput* recalculatedOutput = ScheduledSettings::GetInstance().GetNewRecalculatedOutput(output, 1, m_number - 1);
-   lwo->SetOutput(recalculatedOutput->GetOutput());
+   LedWizOutput recalculatedLedWizOutput(lwo->GetLedWizOutputNumber());
+   recalculatedLedWizOutput.SetOutput(recalculatedOutput->GetOutput());
    if (recalculatedOutput != output)
       delete recalculatedOutput;
-   s->UpdateValue(lwo);
+   s->UpdateValue(&recalculatedLedWizOutput);
 }
 
 void LedWiz::StartupLedWiz()
