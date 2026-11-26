@@ -166,9 +166,10 @@ bool PinOne::VerifySettings()
 void PinOne::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
 {
    uint8_t pfx = 200;
-   for (int i = 0; i < GetNumberOfOutputs(); i += 7, ++pfx)
+   int count = std::min({ GetNumberOfOutputs(), static_cast<int>(newOutputValues.size()), static_cast<int>(m_oldOutputValues.size()) });
+   for (int i = 0; i < count; i += 7, ++pfx)
    {
-      int lim = std::min(i + 7, GetNumberOfOutputs());
+      int lim = std::min(i + 7, count);
       for (int j = i; j < lim; ++j)
       {
          if (newOutputValues[j] != m_oldOutputValues[j])
