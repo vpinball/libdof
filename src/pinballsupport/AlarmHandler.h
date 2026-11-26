@@ -7,6 +7,7 @@
 #include <mutex>
 #include <chrono>
 #include <memory>
+#include <cstdint>
 
 namespace DOF
 {
@@ -73,11 +74,13 @@ private:
       int intervalMs;
       TimePoint nextAlarm;
       AlarmCallback intervalAlarmHandler;
+      uint64_t id;
 
-      IntervalAlarmSetting(int interval, AlarmCallback handler)
+      IntervalAlarmSetting(int interval, AlarmCallback handler, uint64_t registration)
          : intervalMs(interval)
          , intervalAlarmHandler(handler)
          , nextAlarm(std::chrono::steady_clock::now() + std::chrono::milliseconds(interval))
+         , id(registration)
       {
       }
    };
@@ -86,6 +89,7 @@ private:
    std::recursive_mutex m_intervalAlarmMutex;
    std::vector<AlarmSetting> m_alarmList;
    std::vector<IntervalAlarmSetting> m_intervalAlarmList;
+   uint64_t m_nextIntervalAlarmId = 1;
 
    TimePoint GetNextAlarm();
    TimePoint GetNextIntervalAlarm();

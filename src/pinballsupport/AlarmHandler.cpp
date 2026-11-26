@@ -113,7 +113,7 @@ void AlarmHandler::RegisterIntervalAlarm(int intervalMs, AlarmCallback intervalA
    std::lock_guard<std::recursive_mutex> lock(m_intervalAlarmMutex);
 
    UnregisterIntervalAlarm(intervalAlarmHandler);
-   m_intervalAlarmList.emplace_back(intervalMs, intervalAlarmHandler);
+   m_intervalAlarmList.emplace_back(intervalMs, intervalAlarmHandler, m_nextIntervalAlarmId++);
 }
 
 void AlarmHandler::UnregisterIntervalAlarm(AlarmCallback intervalAlarmHandler)
@@ -152,17 +152,17 @@ AlarmHandler::TimePoint AlarmHandler::GetNextIntervalAlarm()
 bool AlarmHandler::ProcessIntervalAlarms(TimePoint alarmTime)
 {
    std::vector<AlarmCallback> toExecute;
-   std::vector<size_t> toUpdateIndices;
+   std::vector<uint64_t> toUpdate;
 
    {
       std::lock_guard<std::recursive_mutex> lock(m_intervalAlarmMutex);
 
-      for (size_t i = 0; i < m_intervalAlarmList.size(); ++i)
+      for (const IntervalAlarmSetting& intervalAlarm : m_intervalAlarmList)
       {
-         if (m_intervalAlarmList[i].nextAlarm <= alarmTime)
+         if (intervalAlarm.nextAlarm <= alarmTime)
          {
-            toExecute.push_back(m_intervalAlarmList[i].intervalAlarmHandler);
-            toUpdateIndices.push_back(i);
+            toExecute.push_back(intervalAlarm.intervalAlarmHandler);
+            toUpdate.push_back(intervalAlarm.id);
          }
       }
    }
@@ -183,20 +183,19 @@ bool AlarmHandler::ProcessIntervalAlarms(TimePoint alarmTime)
    {
       std::lock_guard<std::recursive_mutex> lock(m_intervalAlarmMutex);
 
-      for (size_t i : toUpdateIndices)
+      size_t next = 0;
+      for (IntervalAlarmSetting& intervalAlarm : m_intervalAlarmList)
       {
-         if (i < m_intervalAlarmList.size())
-         {
-            auto& intervalAlarm = m_intervalAlarmList[i];
-            if (intervalAlarm.nextAlarm + std::chrono::milliseconds(intervalAlarm.intervalMs) <= alarmTime)
-            {
-               intervalAlarm.nextAlarm = alarmTime + std::chrono::milliseconds(1);
-            }
-            else
-            {
-               intervalAlarm.nextAlarm = intervalAlarm.nextAlarm + std::chrono::milliseconds(intervalAlarm.intervalMs);
-            }
-         }
+         while (next < toUpdate.size() && toUpdate[next] < intervalAlarm.id)
+            ++next;
+         if (next == toUpdate.size())
+            break;
+         if (toUpdate[next] != intervalAlarm.id)
+            continue;
+         if (intervalAlarm.nextAlarm + std::chrono::milliseconds(intervalAlarm.intervalMs) <= alarmTime)
+            intervalAlarm.nextAlarm = alarmTime + std::chrono::milliseconds(1);
+         else
+            intervalAlarm.nextAlarm = intervalAlarm.nextAlarm + std::chrono::milliseconds(intervalAlarm.intervalMs);
       }
    }
 
