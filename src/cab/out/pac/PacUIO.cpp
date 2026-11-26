@@ -301,39 +301,17 @@ void PacUIO::PacUIOUnit::SendPacUIOUpdate()
       m_updateRequired = false;
    }
 
-   uint8_t intensityUpdatesRequired = 0;
-   uint8_t stateUpdatesRequired = 0;
-
+   int updatesRequired = 0;
    if (!m_forceFullUpdate)
    {
-      for (int g = 0; g < 12; g++)
+      for (int o = 0; o < 96; o++)
       {
-         bool stateUpdateRequired = false;
-         for (int p = 0; p < 8; p++)
-         {
-            int o = g << 3 | p;
-            if (m_currentValue[o] > 0)
-            {
-               if (m_currentValue[o] != m_lastValueSent[o])
-               {
-                  intensityUpdatesRequired++;
-               }
-               else if (!m_lastStateSent[o])
-               {
-                  stateUpdateRequired = true;
-               }
-            }
-            else if (m_lastStateSent[o])
-            {
-               stateUpdateRequired = true;
-            }
-         }
-         if (stateUpdateRequired)
-            stateUpdatesRequired++;
+         if (m_currentValue[o] != m_lastValueSent[o] || (m_currentValue[o] > 0) != m_lastStateSent[o])
+            updatesRequired++;
       }
    }
 
-   if (m_forceFullUpdate || (intensityUpdatesRequired + stateUpdatesRequired) > 50)
+   if (m_forceFullUpdate || updatesRequired > 50)
    {
       if (m_pdSingleton->PacLed64SetLEDIntensities(m_index, m_currentValue))
       {
@@ -347,39 +325,18 @@ void PacUIO::PacUIOUnit::SendPacUIOUpdate()
    }
    else
    {
-      for (int g = 0; g < 12; g++)
+      for (int o = 0; o < 96; o++)
       {
-         int mask = 0;
-         bool stateUpdateRequired = false;
-         for (int p = 0; p < 8; p++)
+         if (m_currentValue[o] == m_lastValueSent[o] && (m_currentValue[o] > 0) == m_lastStateSent[o])
+            continue;
+
+         if (!m_pdSingleton->PacLed64SetLEDIntensity(m_index, o, m_currentValue[o]))
          {
-            int o = g << 3 | p;
-            if (m_currentValue[o] > 0)
-            {
-               if (m_currentValue[o] != m_lastValueSent[o])
-               {
-                  m_pdSingleton->PacLed64SetLEDIntensity(m_index, o, m_currentValue[o]);
-                  m_lastStateSent[o] = true;
-                  m_lastValueSent[o] = m_currentValue[o];
-               }
-               else if (!m_lastStateSent[o])
-               {
-                  mask |= (1 << p);
-                  stateUpdateRequired = true;
-                  m_lastStateSent[o] = true;
-               }
-            }
-            else if (m_lastStateSent[o])
-            {
-               stateUpdateRequired = true;
-               m_lastStateSent[o] = false;
-               m_lastValueSent[o] = 0;
-            }
+            m_forceFullUpdate = true;
+            continue;
          }
-         if (stateUpdateRequired)
-         {
-            m_pdSingleton->PacLed64SetLEDStates(m_index, g + 1, static_cast<uint8_t>(mask));
-         }
+         m_lastValueSent[o] = m_currentValue[o];
+         m_lastStateSent[o] = (m_currentValue[o] > 0);
       }
    }
 }
