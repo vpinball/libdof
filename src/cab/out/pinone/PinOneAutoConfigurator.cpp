@@ -251,7 +251,7 @@ bool PinOneAutoConfigurator::TryConnect(const std::string& sp)
 
    bool connected = false;
    uint8_t command[] = { 0, 251, 0, 0, 0, 0, 0, 0, 0 };
-   if (sp_blocking_write(port, command, sizeof(command), 100) == static_cast<int>(sizeof(command)))
+   if (static_cast<int>(sp_blocking_write(port, command, sizeof(command), 100)) == static_cast<int>(sizeof(command)))
    {
       std::string line;
       auto lineStart = std::chrono::steady_clock::now();
