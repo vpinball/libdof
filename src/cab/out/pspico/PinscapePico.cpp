@@ -85,15 +85,7 @@ void PinscapePico::Init(Cabinet* cabinet)
    ConnectToController();
 }
 
-void PinscapePico::Finish()
-{
-   if (m_dev)
-   {
-      AllOff();
-   }
-   DisconnectFromController();
-   OutputControllerFlexCompleteBase::Finish();
-}
+void PinscapePico::Finish() { OutputControllerFlexCompleteBase::Finish(); }
 
 bool PinscapePico::VerifySettings()
 {
