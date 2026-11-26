@@ -1129,12 +1129,12 @@ void Configurator::AssignEffectToTableElements(Table* table, const std::vector<s
       {
          std::string elementName = descriptor.substr(1);
 
-         TableElementData elementData(elementName, 0);
+         TableElementData elementData(descriptor, 0);
          tableElements->UpdateState(&elementData);
 
          for (TableElement* te : *tableElements)
          {
-            if (te->GetName() == elementName)
+            if (te->GetName() == StringExtensions::ToUpper(elementName))
             {
                tableElement = te;
                break;
