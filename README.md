@@ -221,6 +221,17 @@ cmake -DPLATFORM=android -DARCH=arm64-v8a -DCMAKE_BUILD_TYPE=Release -B build
 cmake --build build
 ```
 
+#### Embedding libdof in another shared library
+
+`LIBDOFAPI` marks the `DOF` and `Config` classes as exported (`__declspec(dllexport)` with MSVC, default visibility elsewhere). If you compile libdof's sources statically into your own shared library, define `LIBDOF_STATIC` for libdof's sources and for any code that includes its headers. `LIBDOFAPI` is then empty, and your library's own export and visibility settings decide what it exports.
+
+The CMake targets do not set `LIBDOF_STATIC`, so pass it yourself, for example:
+
+```shell
+cmake -DPLATFORM=linux -DARCH=x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-DLIBDOF_STATIC" -B build
+cmake --build build --target dof_static
+```
+
 ## Testing:
 
 The `dof_test` tool requires `--base-path` to specify the VPinballX data directory.
