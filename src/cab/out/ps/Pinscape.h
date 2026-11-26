@@ -56,7 +56,7 @@ private:
       int GetNumOutputs() const { return m_numOutputs; }
       bool IsLedWizEmulator(int unitNum);
       bool ReadUSB(uint8_t* buf);
-      void AllOff();
+      bool AllOff();
       bool SpecialRequest(uint8_t id);
       bool WriteUSB(uint8_t* buf);
       void UpdateOutputs(uint8_t* NewOutputValues);

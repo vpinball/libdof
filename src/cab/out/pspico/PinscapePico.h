@@ -68,7 +68,7 @@ public:
       bool Open();
       uint8_t* ReadUSB(uint32_t timeoutMs);
       void Close();
-      void AllOff();
+      bool AllOff();
       bool WriteUSB(const std::string& desc, uint8_t* buf, uint32_t timeoutMs);
       bool DeviceRequest(const std::string& desc, uint8_t commandId);
 

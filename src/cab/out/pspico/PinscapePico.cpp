@@ -126,8 +126,11 @@ void PinscapePico::DisconnectFromController()
 {
    if (m_dev)
    {
-      m_dev->AllOff();
+      bool turnedOff = m_dev->IsOpen() && m_dev->AllOff();
       m_cacheInvalid = true;
+      if (!turnedOff)
+         throw std::runtime_error(StringExtensions::Build("PinscapePico {0} could not send ALL PORTS OFF", GetName()));
+      m_disconnectTurnedOff = true;
    }
 }
 
@@ -707,7 +710,7 @@ void PinscapePico::Device::Close()
    }
 }
 
-void PinscapePico::Device::AllOff() { DeviceRequest("ALL PORTS OFF", 0x20); }
+bool PinscapePico::Device::AllOff() { return DeviceRequest("ALL PORTS OFF", 0x20); }
 
 bool PinscapePico::Device::DeviceRequest(const std::string& desc, uint8_t commandId)
 {
