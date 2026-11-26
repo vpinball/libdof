@@ -26,6 +26,8 @@ public:
 
 private:
    void Clear();
+
+   size_t m_initializedCount;
 };
 
 }

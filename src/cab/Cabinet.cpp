@@ -16,6 +16,7 @@
 #include "sequencer/SequentialOutputSettings.h"
 #include "overrides/TableOverrideSettings.h"
 #include <sstream>
+#include <exception>
 
 #ifdef __HIDAPI__
 #include "out/ps/Pinscape.h"
@@ -267,8 +268,44 @@ void Cabinet::Finish()
 {
    Log::Write("Finishing cabinet");
 
-   m_toys->Finish();
-   m_outputControllers->Finish();
+   std::exception_ptr toyError;
+   std::string toyMessage;
+   try
+   {
+      m_toys->Finish();
+   }
+   catch (const std::exception& e)
+   {
+      toyError = std::current_exception();
+      toyMessage = e.what();
+   }
+   catch (...)
+   {
+      toyError = std::current_exception();
+      toyMessage = "unknown exception";
+   }
+   std::exception_ptr controllerError;
+   std::string controllerMessage;
+   try
+   {
+      m_outputControllers->Finish();
+   }
+   catch (const std::exception& e)
+   {
+      controllerError = std::current_exception();
+      controllerMessage = e.what();
+   }
+   catch (...)
+   {
+      controllerError = std::current_exception();
+      controllerMessage = "unknown exception";
+   }
+   if (toyError && controllerError)
+      throw std::runtime_error(StringExtensions::Build("Finishing the toys failed: {0}. Finishing the output controllers failed: {1}", toyMessage, controllerMessage));
+   if (toyError)
+      std::rethrow_exception(toyError);
+   if (controllerError)
+      std::rethrow_exception(controllerError);
    Log::Write("Cabinet finished");
 }
 

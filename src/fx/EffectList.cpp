@@ -3,9 +3,21 @@
 #include "EffectFactory.h"
 #include "../Log.h"
 #include "../general/StringExtensions.h"
+#include <exception>
 
 namespace DOF
 {
+
+EffectList::~EffectList()
+{
+   try
+   {
+      Finish();
+   }
+   catch (...)
+   {
+   }
+}
 
 void EffectList::Init(Table* table)
 {
@@ -13,6 +25,7 @@ void EffectList::Init(Table* table)
    {
       if (pair.second != nullptr)
       {
+         m_initialized.insert(pair.second);
          pair.second->Init(table);
       }
    }
@@ -20,15 +33,30 @@ void EffectList::Init(Table* table)
 
 void EffectList::Finish()
 {
+   std::exception_ptr error;
    for (auto& pair : *this)
    {
-      if (pair.second != nullptr)
+      IEffect* effect = pair.second;
+      if (effect == nullptr)
+         continue;
+      if (m_initialized.erase(effect) > 0)
       {
-         pair.second->Finish();
-         delete pair.second;
+         try
+         {
+            effect->Finish();
+         }
+         catch (...)
+         {
+            if (!error)
+               error = std::current_exception();
+         }
       }
+      delete effect;
    }
    clear();
+   m_initialized.clear();
+   if (error)
+      std::rethrow_exception(error);
 }
 
 tinyxml2::XMLElement* EffectList::ToXml(tinyxml2::XMLDocument& doc) const
