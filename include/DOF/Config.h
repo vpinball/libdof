@@ -1,10 +1,16 @@
 #pragma once
 
-#ifdef _MSC_VER
+#if defined(LIBDOF_STATIC)
+#define LIBDOFAPI
+#elif defined(_MSC_VER)
 #define LIBDOFAPI __declspec(dllexport)
-#define LIBDOFCALLBACK __stdcall
 #else
 #define LIBDOFAPI __attribute__((visibility("default")))
+#endif
+
+#ifdef _MSC_VER
+#define LIBDOFCALLBACK __stdcall
+#else
 #define LIBDOFCALLBACK
 #endif
 
