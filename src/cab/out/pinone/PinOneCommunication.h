@@ -27,7 +27,7 @@ public:
    bool CreateServer();
    bool IsComPortConnected();
    void Disconnect();
-   void Write(const std::vector<uint8_t>& bytesToWrite);
+   bool Write(const std::vector<uint8_t>& bytesToWrite);
    std::string ReadLine();
    std::string GetCOMPort();
 

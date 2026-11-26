@@ -163,11 +163,11 @@ bool PinOneCommunication::IsComPortConnected()
 
 void PinOneCommunication::Disconnect() { SendPipeMessage("DISCONNECT"); }
 
-void PinOneCommunication::Write(const std::vector<uint8_t>& bytesToWrite)
+bool PinOneCommunication::Write(const std::vector<uint8_t>& bytesToWrite)
 {
    std::string base64Bytes = StringExtensions::ToBase64(bytesToWrite);
    SendPipeMessage("WRITE " + base64Bytes);
-   ReadMessage();
+   return ReadMessage() == "OK";
 }
 
 std::string PinOneCommunication::ReadLine()

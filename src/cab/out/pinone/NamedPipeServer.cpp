@@ -260,12 +260,11 @@ void NamedPipeServer::HandleClientConnection(void* serverStream)
             std::string base64Data = requestStr.substr(6);
             std::vector<uint8_t> bytesToWrite = StringExtensions::FromBase64(base64Data);
 
+            bool written = false;
             if (m_serialPort)
-            {
-               sp_blocking_write(m_serialPort, bytesToWrite.data(), bytesToWrite.size(), 500);
-            }
+               written = sp_blocking_write(m_serialPort, bytesToWrite.data(), bytesToWrite.size(), 500) == static_cast<int>(bytesToWrite.size());
 
-            std::string response = "OK";
+            std::string response = written ? "OK" : "ERROR";
 #ifdef _WIN32
             HANDLE pipe = static_cast<HANDLE>(serverStream);
             OVERLAPPED writeOverlapped = {};
