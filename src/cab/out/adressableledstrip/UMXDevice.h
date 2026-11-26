@@ -97,7 +97,7 @@ public:
    void ComputeNumOutputs();
    void CreateDataLines();
    void ResetDataLines();
-   void UpdateOutputs(const std::vector<uint8_t>& outputValues);
+   void UpdateOutputs(const std::vector<uint8_t>& outputValues, bool full = false);
 
    virtual void Initialize() = 0;
    virtual void SendCommand(UMXCommand command, const std::vector<uint8_t>& parameters = { }) = 0;
