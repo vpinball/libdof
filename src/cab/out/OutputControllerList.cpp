@@ -216,7 +216,17 @@ bool OutputControllerList::FromXml(const tinyxml2::XMLElement* element)
 
       if (controller)
       {
-         if (controller->FromXml(controllerElement))
+         bool loaded;
+         try
+         {
+            loaded = controller->FromXml(controllerElement);
+         }
+         catch (...)
+         {
+            delete controller;
+            throw;
+         }
+         if (loaded)
          {
             push_back(controller);
             Log::Write(StringExtensions::Build("Loaded output controller: {0} ({1})", controller->GetName(), typeName));
