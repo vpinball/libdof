@@ -108,6 +108,7 @@ private:
    std::chrono::steady_clock::time_point m_lastUpdate;
    static std::vector<Device*> s_devices;
    Device* m_dev;
+   bool m_cacheInvalid = true;
 };
 
 }

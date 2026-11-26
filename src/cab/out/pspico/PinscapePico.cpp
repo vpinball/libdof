@@ -95,12 +95,14 @@ bool PinscapePico::VerifySettings()
       return false;
    }
 
-   return true;
+   return std::any_of(s_devices.begin(), s_devices.end(), [this](auto device) { return device->UnitNo() == m_number; });
 }
 
 void PinscapePico::ConnectToController()
 {
    if (!VerifySettings())
+      return;
+   if (m_dev && m_dev->IsOpen())
       return;
 
    for (auto device : s_devices)
@@ -125,6 +127,7 @@ void PinscapePico::DisconnectFromController()
    if (m_dev)
    {
       m_dev->AllOff();
+      m_cacheInvalid = true;
    }
 }
 
@@ -199,7 +202,8 @@ public:
             buf[idx++] = static_cast<uint8_t>(output.second);
          }
 
-         psp->m_dev->WriteUSB("SET OUTPUT PORTS", buf, 100);
+         if (!psp->m_dev->WriteUSB("SET OUTPUT PORTS", buf, 100))
+            throw std::runtime_error("PinscapePico SET OUTPUT PORTS failed");
       }
    }
 
@@ -286,7 +290,8 @@ public:
          for (const auto& output : l.outputs)
             buf[idx++] = static_cast<uint8_t>(output);
 
-         psp->m_dev->WriteUSB("SET OUTPUT PORT BLOCK", buf, 100);
+         if (!psp->m_dev->WriteUSB("SET OUTPUT PORT BLOCK", buf, 100))
+            throw std::runtime_error("PinscapePico SET OUTPUT PORT BLOCK failed");
       }
    }
 
@@ -301,7 +306,7 @@ private:
 void PinscapePico::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
 {
    if (!m_dev)
-      return;
+      throw std::runtime_error(StringExtensions::Build("PinscapePico {0} is not connected", GetName()));
 
    ContiguousOutputListGroup contiguousGroup;
    RandomAccessOutputListGroup randomGroup;
@@ -314,7 +319,7 @@ void PinscapePico::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
    for (int i = 0; i < count; ++i)
    {
       int val = newOutputValues[i];
-      bool changed = (newOutputValues[i] != m_oldOutputValues[i]);
+      bool changed = m_forceFullTransfer || m_cacheInvalid || newOutputValues[i] != m_oldOutputValues[i];
 
       contiguousGroup.Add(i, val, changed);
       randomGroup.Add(i, val, changed);
@@ -327,10 +332,12 @@ void PinscapePico::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
       }
    }
 
+   m_cacheInvalid = true;
    if (contiguousGroup.PacketCount() < randomGroup.PacketCount() || (contiguousGroup.PacketCount() <= randomGroup.PacketCount() && contiguousGroup.PortCount() < randomGroup.PortCount()))
       contiguousGroup.Send(this);
    else
       randomGroup.Send(this);
+   m_cacheInvalid = false;
 
    if (firstChangedIndex >= 0)
    {
