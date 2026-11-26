@@ -119,6 +119,24 @@ void UMXController::UpdateCabinetFromConfig(Cabinet* cabinet)
       return;
    }
 
+   if (m_dev->m_testOnConnect != UMXDevice::TestMode::None)
+   {
+      std::vector<uint8_t> parameters = {
+         static_cast<uint8_t>(m_dev->m_testOnConnect),
+         m_dev->m_testOnConnectDuration,
+      };
+      try
+      {
+         m_dev->SendCommand(UMXDevice::UMXCommand::UMX_StartTest, parameters);
+      }
+      catch (const std::exception& e)
+      {
+         if (m_dev->IsLost())
+            throw;
+         Log::Warning(StringExtensions::Build("UMX controller {0} could not start its connect test: {1}", GetName(), e.what()));
+      }
+   }
+
    Log::Write(StringExtensions::Build("Detected and added UMX Controller Nr. {0} with name {1}", std::to_string(m_number), GetName()));
    cabinet->GetOutputControllers()->push_back(this);
 
@@ -225,14 +243,6 @@ void UMXController::UpdateCabinetFromConfig(Cabinet* cabinet)
       }
    }
 
-   if (m_dev->m_testOnConnect != UMXDevice::TestMode::None)
-   {
-      std::vector<uint8_t> parameters = {
-         static_cast<uint8_t>(m_dev->m_testOnConnect),
-         m_dev->m_testOnConnectDuration,
-      };
-      m_dev->SendCommand(UMXDevice::UMXCommand::UMX_StartTest, parameters);
-   }
 }
 
 tinyxml2::XMLElement* UMXController::ToXml(tinyxml2::XMLDocument& doc) const
