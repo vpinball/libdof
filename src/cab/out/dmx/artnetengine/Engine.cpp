@@ -141,14 +141,14 @@ uint8_t Engine::LoByte(int value) const { return static_cast<uint8_t>(value & 0x
 
 uint8_t Engine::HiByte(int value) const { return static_cast<uint8_t>((value >> 8) & 0xFF); }
 
-void Engine::SendDMX(const std::string& broadcastAddress, short universe, const std::vector<uint8_t>& data, int dataLength)
+bool Engine::SendDMX(const std::string& broadcastAddress, short universe, const std::vector<uint8_t>& data, int dataLength)
 {
    std::lock_guard<std::mutex> lock(m_udpMutex);
 
    if (!m_socketInitialized || m_socket < 0)
    {
       Log::Exception("ArtNet engine socket not initialized");
-      return;
+      return false;
    }
 
    std::vector<uint8_t> packet(0x12 + dataLength);
@@ -177,7 +177,7 @@ void Engine::SendDMX(const std::string& broadcastAddress, short universe, const 
    catch (const std::exception& e)
    {
       Log::Exception(StringExtensions::Build("Exception occurred copying DMX data in ArtNet Engine: {0}", e.what()));
-      return;
+      return false;
    }
 
    if (m_socketInitialized && m_socket >= 0)
@@ -198,7 +198,7 @@ void Engine::SendDMX(const std::string& broadcastAddress, short universe, const 
             if (inet_pton(AF_INET, broadcastAddress.c_str(), &addr.sin_addr) <= 0)
             {
                Log::Exception(StringExtensions::Build("Invalid broadcast address for ArtNet: {0}", broadcastAddress));
-               return;
+               return false;
             }
          }
 
@@ -220,6 +220,7 @@ void Engine::SendDMX(const std::string& broadcastAddress, short universe, const 
          }
 
          m_sendExceptionCount = 0;
+         return true;
       }
       catch (const std::exception& e)
       {
@@ -237,6 +238,7 @@ void Engine::SendDMX(const std::string& broadcastAddress, short universe, const 
          }
       }
    }
+   return false;
 }
 
 }
