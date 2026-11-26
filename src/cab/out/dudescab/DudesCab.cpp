@@ -393,7 +393,7 @@ DudesCab::Device::Device(RIDType rid, const std::string& path, const std::string
 {
    m_hidDevice = hid_open_path(path.c_str());
    if (!m_hidDevice)
-      return;
+      throw std::runtime_error("the device could not be opened");
 
    try
    {
