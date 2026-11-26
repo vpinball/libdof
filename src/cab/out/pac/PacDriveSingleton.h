@@ -84,6 +84,7 @@ private:
    std::map<int, libusb_device_handle*> m_usbDevices;
    std::map<int, int> m_usbInterfaces;
    std::map<int, bool> m_usbDriverDetached;
+   std::map<int, bool> m_usbInterfaceWarned;
    std::mutex m_usbDevicesMutex;
 
    void EnumerateDevices();
