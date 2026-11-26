@@ -14,7 +14,7 @@ void AlphaMappingTable::Initialize()
    for (int alpha = 0; alpha < 256; alpha++)
    {
       for (int value = 0; value < 256; value++)
-         AlphaMapping[alpha][value] = static_cast<float>(value) / 255.0f * static_cast<float>(alpha);
+         AlphaMapping[alpha][value] = static_cast<float>(static_cast<double>(value) / 255 * static_cast<double>(alpha));
    }
 
    s_initialized = true;
