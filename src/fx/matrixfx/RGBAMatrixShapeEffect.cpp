@@ -104,7 +104,8 @@ void RGBAMatrixShapeEffect::Trigger(TableElementData* tableElementData)
 {
    if (m_targetEffect != nullptr)
    {
-      m_targetEffect->Trigger(tableElementData);
+      TableElementData data = *tableElementData;
+      m_targetEffect->Trigger(&data);
    }
 }
 
