@@ -399,6 +399,8 @@ void PacLed64::PacLed64Unit::SendPacLed64Update()
          }
          m_forceFullUpdate = false;
       }
+      else
+         m_forceFullUpdate = true;
    }
    else
    {
