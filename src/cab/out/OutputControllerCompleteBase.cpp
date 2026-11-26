@@ -6,6 +6,7 @@
 #include <cstring>
 #include <condition_variable>
 #include <memory>
+#include <stdexcept>
 
 namespace DOF
 {
@@ -35,6 +36,7 @@ void OutputControllerCompleteBase::Init(Cabinet* cabinet)
    if (settingsValid)
    {
       SetupOutputs();
+      m_finishError.clear();
       InitUpdaterThread();
       Log::Write(StringExtensions::Build("{0} {1} initialized and updater thread started.", GetXmlElementName(), GetName()));
    }
@@ -48,6 +50,12 @@ void OutputControllerCompleteBase::Finish()
 {
    FinishUpdaterThread();
    Log::Write(StringExtensions::Build("{0} {1} finished and updater thread stopped.", GetXmlElementName(), GetName()));
+   if (!m_finishError.empty())
+   {
+      std::string error = m_finishError;
+      m_finishError.clear();
+      throw std::runtime_error(error);
+   }
 }
 
 void OutputControllerCompleteBase::Update()
@@ -283,6 +291,8 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
 
       Log::Write(StringExtensions::Build("Updater thread connected to {0} {1}", GetXmlElementName(), GetName()));
 
+      bool died = false;
+      bool fullTransferRequired = true;
       while (m_keepUpdaterThreadAlive)
       {
          std::vector<uint8_t> valuesToSend;
@@ -302,13 +312,14 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
                m_inUseState = InUseState::Running;
             }
 
-            if (m_inUseState == InUseState::Running)
-               UpdateOutputs(valuesToSend);
+            if (m_inUseState == InUseState::Running && Transfer(valuesToSend, fullTransferRequired))
+               fullTransferRequired = false;
          }
          catch (const std::exception& e)
          {
             Log::Exception(StringExtensions::Build("Could not send update: {0}. Will try again.", e.what()));
             updateOK = false;
+            fullTransferRequired = true;
          }
 
          if (!updateOK)
@@ -328,6 +339,7 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
             }
             catch (...)
             {
+               died = true;
                break;
             }
             Log::Write("Reconnected to controller");
@@ -345,13 +357,20 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
       {
          if (m_inUseState != InUseState::Startup)
          {
-            std::vector<uint8_t> zeroValues(m_outputValues.size(), 0);
-            UpdateOutputs(zeroValues);
+            if (died)
+               m_finishError = StringExtensions::Build("{0} {1} lost its connection, its outputs may still be on", GetXmlElementName(), GetName());
+            else
+            {
+               std::vector<uint8_t> zeroValues(m_outputValues.size(), 0);
+               if (!Transfer(zeroValues, true))
+                  m_finishError = StringExtensions::Build("{0} {1} could not send its final update", GetXmlElementName(), GetName());
+            }
          }
       }
       catch (const std::exception& e)
       {
          Log::Exception(StringExtensions::Build("Exception occurred while trying to turn off all outputs: {0}", e.what()));
+         m_finishError = StringExtensions::Build("{0} {1} could not turn its outputs off: {2}", GetXmlElementName(), GetName(), e.what());
       }
 
       try
@@ -366,8 +385,26 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
    catch (const std::exception& e)
    {
       Log::Exception(StringExtensions::Build("Exception occurred in updater thread: {0}", e.what()));
+      m_finishError = StringExtensions::Build("{0} {1} failed: {2}", GetXmlElementName(), GetName(), e.what());
    }
    m_updaterThreadFinished = true;
+}
+
+bool OutputControllerCompleteBase::Transfer(const std::vector<uint8_t>& values, bool full)
+{
+   m_forceFullTransfer = full;
+   m_transferSkipped = false;
+   try
+   {
+      UpdateOutputs(values);
+   }
+   catch (...)
+   {
+      m_forceFullTransfer = false;
+      throw;
+   }
+   m_forceFullTransfer = false;
+   return !m_transferSkipped;
 }
 
 }
