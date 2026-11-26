@@ -64,7 +64,10 @@ void UMXController::ConnectToController()
 void UMXController::DisconnectFromController()
 {
    if (m_inUseState == InUseState::Running && m_dev)
+   {
       m_dev->SendCommand(UMXDevice::UMXCommand::UMX_AllOff);
+      m_disconnectTurnedOff = true;
+   }
 }
 
 bool UMXController::VerifySettings()
