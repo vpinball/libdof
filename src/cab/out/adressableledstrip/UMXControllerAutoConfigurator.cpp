@@ -4,6 +4,7 @@
 #include "../OutputControllerList.h"
 #include "../../../Log.h"
 #include "../../../general/StringExtensions.h"
+#include <algorithm>
 
 namespace DOF
 {
@@ -85,8 +86,21 @@ void UMXControllerAutoConfigurator::AutoConfig(Cabinet* cabinet)
       if (!found)
       {
          UMXController* umxC = new UMXController();
-         umxC->SetNumber(device->UnitNo());
-         umxC->UpdateCabinetFromConfig(cabinet);
+         try
+         {
+            umxC->SetNumber(device->UnitNo());
+            umxC->UpdateCabinetFromConfig(cabinet);
+         }
+         catch (const std::exception& e)
+         {
+            Log::Exception(StringExtensions::Build("UMX device {0} could not be configured and is skipped: {1}", device->m_name, e.what()));
+            OutputControllerList* controllers = cabinet->GetOutputControllers();
+            if (std::find(controllers->begin(), controllers->end(), umxC) == controllers->end())
+            {
+               delete umxC;
+               device->Release();
+            }
+         }
       }
    }
 
