@@ -210,6 +210,7 @@ private:
 
    static std::vector<Device*> FindDevices();
    static std::vector<Device*> s_devices;
+   static bool s_discovered;
 };
 
 }

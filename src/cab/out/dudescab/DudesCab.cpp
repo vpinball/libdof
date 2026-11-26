@@ -25,6 +25,7 @@ namespace DOF
 {
 
 std::vector<DudesCab::Device*> DudesCab::s_devices;
+bool DudesCab::s_discovered = false;
 
 const DudesCab::Device::Version DudesCab::Device::s_minimalMxVersion(1, 9, 0);
 const DudesCab::Device::Version DudesCab::Device::s_newProtocolVersion(1, 9, 0);
@@ -91,7 +92,16 @@ void DudesCab::Finish() { OutputControllerFlexCompleteBase::Finish(); }
 bool DudesCab::VerifySettings()
 {
    if (m_dev == nullptr)
-      ConnectToController();
+   {
+      try
+      {
+         ConnectToController();
+      }
+      catch (const std::exception& e)
+      {
+         Log::Warning(e.what());
+      }
+   }
    return m_dev != nullptr;
 }
 
@@ -200,6 +210,8 @@ void DudesCab::ConnectToController()
    {
       m_dev = nullptr;
       m_cacheInvalid = true;
+      if ((*it)->GetSerial().empty() || (*it)->GetSerial() == "<not available>")
+         throw std::runtime_error(StringExtensions::Build("Dude's Cab {0} reports no serial number and cannot be opened again", GetName()));
       return;
    }
    if (m_dev != *it)
@@ -223,8 +235,11 @@ void DudesCab::DisconnectFromController()
 
 std::vector<DudesCab::Device*> DudesCab::AllDevices()
 {
-   if (s_devices.empty())
+   if (!s_discovered)
+   {
       s_devices = FindDevices();
+      s_discovered = true;
+   }
    return s_devices;
 }
 
@@ -234,6 +249,7 @@ void DudesCab::ClearDevices()
       delete device;
 
    s_devices.clear();
+   s_discovered = false;
 }
 
 std::vector<DudesCab::Device*> DudesCab::FindDevices()
@@ -379,65 +395,74 @@ DudesCab::Device::Device(RIDType rid, const std::string& path, const std::string
    if (!m_hidDevice)
       return;
 
-   std::vector<uint8_t> answer;
-
-   SendCommand(HIDCommonReportType::RT_HANDSHAKE);
-   answer = ReadUSB(static_cast<uint8_t>(HIDCommonReportType::RT_HANDSHAKE));
-   if (answer.size() > hidCommandPrefixSize)
+   try
    {
-      std::string handShake(answer.begin() + hidCommandPrefixSize, answer.end());
-      handShake.erase(std::find(handShake.begin(), handShake.end(), '\0'), handShake.end());
+      std::vector<uint8_t> answer;
 
-      std::vector<std::string> splits;
-      std::istringstream stream(handShake);
-      std::string token;
-      while (std::getline(stream, token, '|'))
-         splits.push_back(token);
-
-      switch (splits.size())
+      SendCommand(HIDCommonReportType::RT_HANDSHAKE);
+      answer = ReadUSB(static_cast<uint8_t>(HIDCommonReportType::RT_HANDSHAKE));
+      if (answer.size() > hidCommandPrefixSize)
       {
-      case 1: Log::Warning("Old Dude's Cab handshake, you should update your firmware"); break;
+         std::string handShake(answer.begin() + hidCommandPrefixSize, answer.end());
+         handShake.erase(std::find(handShake.begin(), handShake.end(), '\0'), handShake.end());
 
-      case 2:
-         Log::Warning("Old Dude's Cab handshake, you should update your firmware");
-         m_name = splits[0];
-         handShake = splits[1];
-         break;
+         std::vector<std::string> splits;
+         std::istringstream stream(handShake);
+         std::string token;
+         while (std::getline(stream, token, '|'))
+            splits.push_back(token);
 
-      case 3:
-      default:
-         m_name = splits[0];
-         handShake = splits[1];
+         switch (splits.size())
          {
-            std::vector<std::string> numbers;
-            std::istringstream vstream(splits[2]);
-            std::string vtoken;
-            while (std::getline(vstream, vtoken, '.'))
-               numbers.push_back(vtoken);
-            if (numbers.size() == 3)
-               m_firmwareVersion = Version(std::stoi(numbers[0]), std::stoi(numbers[1]), std::stoi(numbers[2]));
-         }
-         break;
-      }
-      Log::Write(StringExtensions::Build("{0} says : {1}", m_name, handShake));
-   }
+         case 1: Log::Warning("Old Dude's Cab handshake, you should update your firmware"); break;
 
-   SendCommand(HIDCommonReportType::RT_VERSION);
-   answer = ReadUSB(static_cast<uint8_t>(HIDCommonReportType::RT_VERSION));
-   if (answer.size() > hidCommandPrefixSize)
-   {
-      std::vector<uint8_t> info(answer.begin() + hidCommandPrefixSize, answer.end());
-      if (info.size() >= 5)
-      {
-         Log::Write(StringExtensions::Build("DudesCab Controller Informations : Device [{0},RID:{1}] Name [{2}], v{3}.{4}.{5}, unit #{6}, Max extensions {7}",
-            { m_devicename, std::to_string(static_cast<int>(m_deviceRid)), m_name, std::to_string(info[0]), std::to_string(info[1]), std::to_string(info[2]), std::to_string(info[3]),
-               std::to_string(info[4]) }));
-         m_unitNo = info[3];
-         m_maxExtensions = info[4];
-         m_firmwareVersion = Version(info[0], info[1], info[2]);
-         if (info.size() >= 6)
-            m_configVersion = info[5];
+         case 2:
+            Log::Warning("Old Dude's Cab handshake, you should update your firmware");
+            m_name = splits[0];
+            handShake = splits[1];
+            break;
+
+         case 3:
+         default:
+            m_name = splits[0];
+            handShake = splits[1];
+            {
+               std::vector<std::string> numbers;
+               std::istringstream vstream(splits[2]);
+               std::string vtoken;
+               while (std::getline(vstream, vtoken, '.'))
+                  numbers.push_back(vtoken);
+               if (numbers.size() == 3)
+                  m_firmwareVersion = Version(std::stoi(numbers[0]), std::stoi(numbers[1]), std::stoi(numbers[2]));
+            }
+            break;
+         }
+         Log::Write(StringExtensions::Build("{0} says : {1}", m_name, handShake));
       }
+
+      SendCommand(HIDCommonReportType::RT_VERSION);
+      answer = ReadUSB(static_cast<uint8_t>(HIDCommonReportType::RT_VERSION));
+      if (answer.size() > hidCommandPrefixSize)
+      {
+         std::vector<uint8_t> info(answer.begin() + hidCommandPrefixSize, answer.end());
+         if (info.size() >= 5)
+         {
+            Log::Write(StringExtensions::Build("DudesCab Controller Informations : Device [{0},RID:{1}] Name [{2}], v{3}.{4}.{5}, unit #{6}, Max extensions {7}",
+               { m_devicename, std::to_string(static_cast<int>(m_deviceRid)), m_name, std::to_string(info[0]), std::to_string(info[1]), std::to_string(info[2]), std::to_string(info[3]),
+                  std::to_string(info[4]) }));
+            m_unitNo = info[3];
+            m_maxExtensions = info[4];
+            m_firmwareVersion = Version(info[0], info[1], info[2]);
+            if (info.size() >= 6)
+               m_configVersion = info[5];
+         }
+      }
+   }
+   catch (...)
+   {
+      hid_close(m_hidDevice);
+      m_hidDevice = nullptr;
+      throw;
    }
 }
 
