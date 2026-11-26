@@ -1,6 +1,7 @@
 #include "FTDI.h"
 #include "../../../Log.h"
 #include "../../../general/StringExtensions.h"
+#include <algorithm>
 #include <cstring>
 
 namespace DOF
@@ -71,6 +72,7 @@ FTDI::FT_STATUS FTDI::GetDeviceInfoList(FT_DEVICE_INFO_NODE* devinfo, uint32_t& 
    if (!m_ftdiContext || !devinfo)
       return FT_INVALID_PARAMETER;
 
+   const uint32_t capacity = numdevs;
    struct ftdi_device_list* devlist = nullptr;
    int result = ftdi_usb_find_all(m_ftdiContext, &devlist, 0x0403, 0x6001);
 
@@ -80,7 +82,7 @@ FTDI::FT_STATUS FTDI::GetDeviceInfoList(FT_DEVICE_INFO_NODE* devinfo, uint32_t& 
       return ConvertLibftdiError(result);
    }
 
-   numdevs = static_cast<uint32_t>(result);
+   numdevs = (std::min)(static_cast<uint32_t>(result), capacity);
 
    struct ftdi_device_list* curdev = devlist;
    for (uint32_t i = 0; i < numdevs && curdev; ++i, curdev = curdev->next)
