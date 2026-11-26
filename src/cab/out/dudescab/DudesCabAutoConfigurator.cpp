@@ -18,7 +18,18 @@ void DudesCabAutoConfigurator::AutoConfig(Cabinet* cabinet)
 
    for (DudesCab::Device* device : devices)
    {
-      if (device->UnitNo() >= 1 && device->UnitNo() <= 5)
+      bool preconfigured = false;
+      for (IOutputController* controller : *cabinet->GetOutputControllers())
+      {
+         DudesCab* existing = dynamic_cast<DudesCab*>(controller);
+         if (existing && existing->GetNumber() == device->UnitNo())
+         {
+            preconfigured = true;
+            break;
+         }
+      }
+
+      if (!preconfigured && device->UnitNo() >= 1 && device->UnitNo() <= 5)
       {
          std::string controllerName = StringExtensions::Build("DudesCab Controller {0:00}", std::to_string(device->UnitNo()));
 
