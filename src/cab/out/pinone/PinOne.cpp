@@ -172,7 +172,7 @@ void PinOne::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
       int lim = std::min(i + 7, count);
       for (int j = i; j < lim; ++j)
       {
-         if (newOutputValues[j] != m_oldOutputValues[j])
+         if (m_forceFullTransfer || newOutputValues[j] != m_oldOutputValues[j])
          {
             UpdateDelay();
             std::vector<uint8_t> buf(9);
@@ -182,11 +182,16 @@ void PinOne::UpdateOutputs(const std::vector<uint8_t>& newOutputValues)
 
             if (m_comPort == HidSentinel)
             {
-               if (m_hidDevice)
-                  m_hidDevice->WriteUSB(buf);
+               if (!m_hidDevice || !m_hidDevice->WriteUSB(buf))
+                  throw std::runtime_error(StringExtensions::Build("Writing to {0} {1} failed", "PinOne", GetName()));
             }
             else if (m_pinOneCommunication)
-               m_pinOneCommunication->Write(buf);
+            {
+               if (!m_pinOneCommunication->Write(buf))
+                  throw std::runtime_error(StringExtensions::Build("Writing to {0} {1} failed", "PinOne", GetName()));
+            }
+            else
+               throw std::runtime_error(StringExtensions::Build("{0} {1} is not connected", "PinOne", GetName()));
 
             std::copy(newOutputValues.begin() + i, newOutputValues.begin() + lim, m_oldOutputValues.begin() + i);
             break;
