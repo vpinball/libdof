@@ -353,6 +353,7 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
          m_updateRequired = false;
       }
 
+      bool turnedOff = false;
       try
       {
          if (m_inUseState != InUseState::Startup)
@@ -362,7 +363,8 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
             else
             {
                std::vector<uint8_t> zeroValues(m_outputValues.size(), 0);
-               if (!Transfer(zeroValues, true))
+               turnedOff = Transfer(zeroValues, true);
+               if (!turnedOff)
                   m_finishError = StringExtensions::Build("{0} {1} could not send its final update", GetXmlElementName(), GetName());
             }
          }
@@ -376,6 +378,11 @@ void OutputControllerCompleteBase::UpdaterThreadDoIt()
       try
       {
          DisconnectFromController();
+      }
+      catch (const std::exception& e)
+      {
+         if (!turnedOff && m_finishError.empty())
+            m_finishError = StringExtensions::Build("{0} {1} could not turn its outputs off: {2}", GetXmlElementName(), GetName(), e.what());
       }
       catch (...)
       {

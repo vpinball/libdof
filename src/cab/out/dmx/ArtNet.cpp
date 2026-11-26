@@ -80,22 +80,22 @@ void ArtNet::ConnectToController()
 
 void ArtNet::DisconnectFromController()
 {
-   try
-   {
-      if (m_engine != nullptr)
-      {
-         std::vector<uint8_t> zeroData(DMX_CHANNELS, 0);
-         m_engine->SendDMX(m_broadcastAddress, m_universe, zeroData, DMX_CHANNELS);
-      }
-   }
-   catch (...)
-   {
-   }
-
+   bool sent = true;
    if (m_engine != nullptr)
    {
+      try
+      {
+         std::vector<uint8_t> zeroData(DMX_CHANNELS, 0);
+         sent = m_engine->SendDMX(m_broadcastAddress, m_universe, zeroData, DMX_CHANNELS);
+      }
+      catch (...)
+      {
+         sent = false;
+      }
       m_engine = nullptr;
    }
+   if (!sent)
+      throw std::runtime_error("the Art-Net packet that turns the outputs off was not sent");
 }
 
 bool ArtNet::FromXml(const tinyxml2::XMLElement* element)
