@@ -644,6 +644,8 @@ std::vector<uint8_t> DudesCab::Device::ReadUSB(uint8_t command)
 std::vector<uint8_t> DudesCab::Device::ReadUSB()
 {
    std::vector<uint8_t> incomingData;
+   if (!m_hidDevice)
+      return incomingData;
    uint8_t receivedCommand = 0;
    auto startRead = std::chrono::steady_clock::now();
 

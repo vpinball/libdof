@@ -71,8 +71,9 @@ void UMXControllerAutoConfigurator::AutoConfig(Cabinet* cabinet)
          preconfigured.push_back(umxC->GetNumber());
    }
 
-   for (auto* device : s_devices)
+   for (auto deviceIt = s_devices.begin(); deviceIt != s_devices.end();)
    {
+      UMXDevice* device = *deviceIt;
       bool found = false;
       for (int num : preconfigured)
       {
@@ -99,9 +100,13 @@ void UMXControllerAutoConfigurator::AutoConfig(Cabinet* cabinet)
             {
                delete umxC;
                device->Release();
+               deviceIt = s_devices.erase(deviceIt);
+               delete device;
+               continue;
             }
          }
       }
+      ++deviceIt;
    }
 
    s_inited = true;
