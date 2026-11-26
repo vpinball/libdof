@@ -374,39 +374,17 @@ void PacLed64::PacLed64Unit::SendPacLed64Update()
       m_updateRequired = false;
    }
 
-   uint8_t intensityUpdatesRequired = 0;
-   uint8_t stateUpdatesRequired = 0;
-
+   int updatesRequired = 0;
    if (!m_forceFullUpdate)
    {
-      for (int g = 0; g < 8; g++)
+      for (int o = 0; o < 64; o++)
       {
-         bool stateUpdateRequired = false;
-         for (int p = 0; p < 8; p++)
-         {
-            int o = (g << 3) | p;
-            if (m_currentValue[o] > 0)
-            {
-               if (m_currentValue[o] != m_lastValueSent[o])
-               {
-                  intensityUpdatesRequired++;
-               }
-               else if (!m_lastStateSent[o])
-               {
-                  stateUpdateRequired = true;
-               }
-            }
-            else if (m_lastStateSent[o])
-            {
-               stateUpdateRequired = true;
-            }
-         }
-         if (stateUpdateRequired)
-            stateUpdatesRequired++;
+         if (m_currentValue[o] != m_lastValueSent[o] || (m_currentValue[o] > 0) != m_lastStateSent[o])
+            updatesRequired++;
       }
    }
 
-   if (m_forceFullUpdate || (intensityUpdatesRequired + stateUpdatesRequired) > m_fullUpdateThreshold)
+   if (m_forceFullUpdate || updatesRequired > m_fullUpdateThreshold)
    {
       EnforceMinUpdateInterval();
       PacDriveSingleton::GetInstance().PacLed64SetLEDIntensities(m_index, m_currentValue.data());
@@ -421,46 +399,22 @@ void PacLed64::PacLed64Unit::SendPacLed64Update()
    }
    else
    {
-      for (int g = 0; g < 8; g++)
+      for (int o = 0; o < 64; o++)
       {
-         int mask = 0;
-         bool stateUpdateRequired = false;
+         if (m_currentValue[o] == m_lastValueSent[o] && (m_currentValue[o] > 0) == m_lastStateSent[o])
+            continue;
 
-         for (int p = 0; p < 8; p++)
+         EnforceMinUpdateInterval();
+         bool written = PacDriveSingleton::GetInstance().PacLed64SetLEDIntensity(m_index, o, m_currentValue[o]);
+         m_lastCommand = std::chrono::steady_clock::now();
+         if (!written)
          {
-            int o = (g << 3) | p;
-            if (m_currentValue[o] > 0)
-            {
-               if (m_currentValue[o] != m_lastValueSent[o])
-               {
-                  EnforceMinUpdateInterval();
-                  PacDriveSingleton::GetInstance().PacLed64SetLEDIntensity(m_index, o, m_currentValue[o]);
-                  m_lastCommand = std::chrono::steady_clock::now();
-
-                  m_lastStateSent[o] = true;
-                  m_lastValueSent[o] = m_currentValue[o];
-               }
-               else if (!m_lastStateSent[o])
-               {
-                  mask |= (1 << p);
-                  stateUpdateRequired = true;
-                  m_lastStateSent[o] = true;
-               }
-            }
-            else if (m_lastStateSent[o])
-            {
-               stateUpdateRequired = true;
-               m_lastStateSent[o] = false;
-               m_lastValueSent[o] = 0;
-            }
+            m_forceFullUpdate = true;
+            continue;
          }
 
-         if (stateUpdateRequired)
-         {
-            EnforceMinUpdateInterval();
-            PacDriveSingleton::GetInstance().PacLed64SetLEDStates(m_index, g + 1, static_cast<uint8_t>(mask));
-            m_lastCommand = std::chrono::steady_clock::now();
-         }
+         m_lastValueSent[o] = m_currentValue[o];
+         m_lastStateSent[o] = (m_currentValue[o] > 0);
       }
    }
 }
