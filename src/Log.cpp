@@ -143,6 +143,7 @@ void Log::Finish()
       m_logger.flush();
       m_logger.close();
    }
+   m_preLogFileLog.clear();
    m_isOk = false;
    m_isInitialized = false;
    m_isEnabled = true;
