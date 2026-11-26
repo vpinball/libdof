@@ -197,6 +197,8 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
                Log::Exception(StringExtensions::Build("An exception occured when loading cabinet config file: {0} - {1}", cabinetConfigFile->FullName(), e.what()));
                if (Config::GetInstance()->IsStrictSetup())
                {
+                  delete m_cabinet;
+                  m_cabinet = nullptr;
                   std::string name = cabinetConfigFile->FullName();
                   delete cabinetConfigFile;
                   throw std::runtime_error(StringExtensions::Build("the cabinet config {0} could not be loaded: {1}", name, e.what()));

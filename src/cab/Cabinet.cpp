@@ -216,7 +216,17 @@ Cabinet* Cabinet::GetCabinetFromConfigXml(const std::string& configXml)
    }
 
    Cabinet* cabinet = new Cabinet();
-   if (!cabinet->FromXml(root))
+   bool loaded;
+   try
+   {
+      loaded = cabinet->FromXml(root);
+   }
+   catch (...)
+   {
+      delete cabinet;
+      throw;
+   }
+   if (!loaded)
    {
       delete cabinet;
       Log::Exception("Failed to deserialize cabinet config from XML");
