@@ -5,7 +5,7 @@ namespace DOF
 
 AnalogAlpha::AnalogAlpha()
    : m_value(0)
-   , m_alpha(255)
+   , m_alpha(0)
 {
 }
 
