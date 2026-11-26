@@ -157,6 +157,14 @@ private:
       std::chrono::steady_clock::time_point m_lastUpdate;
       int m_minCommandIntervalMs;
       std::chrono::steady_clock::time_point m_pbaTime;
+      bool m_writeFailed = false;
+      bool m_shutdownFailed = false;
+
+   public:
+      bool ShutdownFailed() const { return m_shutdownFailed; }
+
+   private:
+      void ForceFullUpdate();
    };
 };
 

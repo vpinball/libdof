@@ -114,8 +114,9 @@ void LedWiz::Finish()
 {
    Log::Write(StringExtensions::Build("Finishing LedWiz Nr. {0:00}", std::to_string(m_number)));
    s_ledWizUnits.at(m_number)->Finish();
-   s_ledWizUnits.at(m_number)->ShutdownLighting();
    Log::Write(StringExtensions::Build("LedWiz Nr. {0:00} finished and updater thread stopped.", std::to_string(m_number)));
+   if (s_ledWizUnits.at(m_number)->ShutdownFailed())
+      throw std::runtime_error(StringExtensions::Build("LedWiz Nr. {0:00} could not turn its outputs off", std::to_string(m_number)));
 }
 
 void LedWiz::AddOutputs()
@@ -490,7 +491,9 @@ void LedWiz::LedWizUnit::Init(Cabinet* cabinet, int minCommandIntervalMs)
 void LedWiz::LedWizUnit::Finish()
 {
    TerminateLedWizUpdaterThread();
+   m_writeFailed = false;
    ShutdownLighting();
+   m_shutdownFailed = m_writeFailed && (m_fp != nullptr || IsPresent());
 }
 
 void LedWiz::LedWizUnit::UpdateValue(LedWizOutput* ledWizOutput)
@@ -616,6 +619,7 @@ void LedWiz::LedWizUnit::LedWizUpdaterDoIt()
    int failCnt = 0;
    while (m_keepLedWizUpdaterAlive)
    {
+      m_writeFailed = false;
       try
       {
          if (IsPresent())
@@ -632,12 +636,15 @@ void LedWiz::LedWizUnit::LedWizUpdaterDoIt()
 
             if (m_inUseState == InUseStates::Running)
                SendLedWizUpdate();
+            if (m_writeFailed)
+               ForceFullUpdate();
          }
          failCnt = 0;
       }
       catch (const std::exception& e)
       {
          Log::Exception(StringExtensions::Build("A error occurred when updating LedWiz Nr. {0}: {1}", std::to_string(m_number), e.what()));
+         ForceFullUpdate();
          failCnt++;
          if (failCnt > MAX_UPDATE_FAIL_COUNT)
          {
@@ -649,15 +656,28 @@ void LedWiz::LedWizUnit::LedWizUpdaterDoIt()
 
       if (m_keepLedWizUpdaterAlive)
       {
+         const bool retry = m_writeFailed;
          std::unique_lock<std::mutex> lock(m_ledWizUpdaterThreadLocker);
          while (!m_triggerUpdate && m_keepLedWizUpdaterAlive)
-            m_updateCondition.wait_for(lock, std::chrono::milliseconds(50));
+         {
+            if (m_updateCondition.wait_for(lock, std::chrono::milliseconds(50)) == std::cv_status::timeout && retry)
+               break;
+         }
       }
       m_triggerUpdate = false;
    }
 
    Log::Write(StringExtensions::Build("Updater thread for LedWiz {0:00} terminated.", std::to_string(m_number)));
    m_updaterThreadFinished = true;
+}
+
+void LedWiz::LedWizUnit::ForceFullUpdate()
+{
+   {
+      std::lock_guard<std::recursive_mutex> lock(m_valueChangeLocker);
+      m_updateRequired = true;
+   }
+   m_pbaTime = std::chrono::steady_clock::time_point();
 }
 
 void LedWiz::LedWizUnit::UpdateDelay()
@@ -727,9 +747,13 @@ void LedWiz::LedWizUnit::WriteUSB(const uint8_t* buf, size_t length)
          std::this_thread::sleep_for(std::chrono::milliseconds(s_retryWait[tries]));
       }
       Log::Error(StringExtensions::Build("LedWiz {0} WriteUSB failed after {1} retries", std::to_string(m_number), std::to_string(std::size(s_retryWait))));
+      m_writeFailed = true;
    }
    else
+   {
       Log::Error(StringExtensions::Build("LedWiz {0} WriteUSB has no file handle", std::to_string(m_number)));
+      m_writeFailed = true;
+   }
 }
 
 bool LedWiz::LedWizUnit::IsPresent() const
