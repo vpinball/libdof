@@ -55,6 +55,8 @@ void UMXController::ConnectToController()
    {
       Log::Warning(StringExtensions::Build("UMX controller {0} could not turn its outputs off before connecting: {1}", GetName(), e.what()));
    }
+   if (m_dev && m_dev->IsLost())
+      throw std::runtime_error(StringExtensions::Build("UMX controller {0} lost its device, which cannot be opened again", GetName()));
    if (m_dev)
       m_dev->ResetDataLines();
 }
