@@ -39,9 +39,10 @@ void TableElementList::UpdateState(TableElementData* data)
 
    if (!data->m_name.empty())
    {
+      std::string name = StringExtensions::ToUpper(data->m_name);
       for (TableElement* element : *this)
       {
-         if (element && element->GetName() == data->m_name)
+         if (element && element->GetName() == name)
          {
             targetElement = element;
             break;
@@ -49,7 +50,7 @@ void TableElementList::UpdateState(TableElementData* data)
       }
    }
 
-   if (!targetElement)
+   if (!targetElement && data->m_name.empty())
    {
       for (TableElement* element : *this)
       {
@@ -63,6 +64,8 @@ void TableElementList::UpdateState(TableElementData* data)
 
    if (targetElement)
       targetElement->SetValue(data->m_value);
+   else if (!data->m_name.empty())
+      push_back(new TableElement(data->m_name, data->m_value));
    else
    {
       TableElement* newElement = new TableElement(data->m_tableElementType, data->m_number, data->m_value);
