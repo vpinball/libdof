@@ -552,6 +552,13 @@ PinscapePico::Device::Device(hid_device* fp, const std::string& path, const std:
          Log::Write(StringExtensions::Build("Pinscape Pico discovery found unit #{0} ({1}), {2} output ports, Pico hardware ID {3}, protocol version {4}",
             { std::to_string(m_unitNo), m_unitName, std::to_string(m_numOutputs), m_hardwareID, std::to_string(m_protocolVersion) }));
 
+         if (m_numOutputs > 255)
+         {
+            Log::Warning(StringExtensions::Build("Pinscape Pico unit #{0} reports {1} output ports, but port numbers are sent as one byte, so only ports 1 to 255 are used",
+               { std::to_string(m_unitNo), std::to_string(m_numOutputs) }));
+            m_numOutputs = 255;
+         }
+
          SendWallClockTime();
 
          identified = true;
