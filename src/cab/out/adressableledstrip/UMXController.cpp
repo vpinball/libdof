@@ -47,7 +47,14 @@ int UMXController::GetNumberOfConfiguredOutputs() { return m_dev ? m_dev->NumOut
 
 void UMXController::ConnectToController()
 {
-   DisconnectFromController();
+   try
+   {
+      DisconnectFromController();
+   }
+   catch (const std::exception& e)
+   {
+      Log::Warning(StringExtensions::Build("UMX controller {0} could not turn its outputs off before connecting: {1}", GetName(), e.what()));
+   }
    if (m_dev)
       m_dev->ResetDataLines();
 }
@@ -74,17 +81,21 @@ void UMXController::UpdateOutputs(const std::vector<uint8_t>& outputValues)
    auto now = std::chrono::steady_clock::now();
    int delay = m_lastTimeInit ? static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastTime).count()) : 0;
 
-   if (!m_lastTimeInit || delay >= m_longestDataLineDelayMs)
-   {
-      if (m_dev)
-         m_dev->UpdateOutputs(outputValues);
-      m_lastTime = std::chrono::steady_clock::now();
-      m_lastTimeInit = true;
-   }
-   else
+   if (m_lastTimeInit && delay < m_longestDataLineDelayMs)
    {
       std::this_thread::sleep_for(std::chrono::milliseconds(m_longestDataLineDelayMs - delay));
+      if (!m_forceFullTransfer)
+      {
+         m_transferSkipped = true;
+         return;
+      }
    }
+
+   if (!m_dev)
+      throw std::runtime_error(StringExtensions::Build("UMX controller {0} has no device", GetName()));
+   m_dev->UpdateOutputs(outputValues, m_forceFullTransfer);
+   m_lastTime = std::chrono::steady_clock::now();
+   m_lastTimeInit = true;
 }
 
 void UMXController::UpdateCabinetFromConfig(Cabinet* cabinet)

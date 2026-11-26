@@ -83,7 +83,7 @@ void UMXDevice::ResetDataLines()
       line.m_oldValues.assign(line.m_nbValues, 255);
 }
 
-void UMXDevice::UpdateOutputs(const std::vector<uint8_t>& outputValues)
+void UMXDevice::UpdateOutputs(const std::vector<uint8_t>& outputValues, bool full)
 {
    if (!m_enabled)
       return;
@@ -115,7 +115,7 @@ void UMXDevice::UpdateOutputs(const std::vector<uint8_t>& outputValues)
       auto& line = m_dataLines[numLine];
       if (line.m_nbLeds > 0)
       {
-         if (line.m_values != line.m_oldValues)
+         if (full || line.m_values != line.m_oldValues)
          {
             nbChangedLines++;
             sendBuffer.push_back(static_cast<uint8_t>(numLine));
@@ -140,8 +140,6 @@ void UMXDevice::UpdateOutputs(const std::vector<uint8_t>& outputValues)
                sendBuffer.push_back(static_cast<uint8_t>(line.m_nbLeds >> 8));
                sendBuffer.insert(sendBuffer.end(), line.m_values.begin(), line.m_values.end());
             }
-
-            line.m_oldValues = line.m_values;
          }
       }
    }
@@ -152,6 +150,11 @@ void UMXDevice::UpdateOutputs(const std::vector<uint8_t>& outputValues)
       buffer.insert(buffer.end(), sendBuffer.begin(), sendBuffer.end());
       SendCommand(UMXCommand::UMX_SendStripsData, buffer);
       WaitAck(static_cast<uint8_t>(UMXCommand::UMX_SendStripsData));
+   }
+   for (auto& line : m_dataLines)
+   {
+      if (line.m_nbLeds > 0)
+         line.m_oldValues = line.m_values;
    }
 }
 
