@@ -322,6 +322,8 @@ void PacUIO::PacUIOUnit::SendPacUIOUpdate()
          }
          m_forceFullUpdate = false;
       }
+      else
+         m_forceFullUpdate = true;
    }
    else
    {
