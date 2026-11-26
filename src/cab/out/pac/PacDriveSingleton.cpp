@@ -58,11 +58,16 @@ void PacDriveSingleton::Shutdown()
       {
          if (pair.second)
          {
+            int interfaceNumber = m_usbInterfaces.count(pair.first) ? m_usbInterfaces[pair.first] : 0;
+            libusb_release_interface(pair.second, interfaceNumber);
+            if (m_usbDriverDetached[pair.first])
+               libusb_attach_kernel_driver(pair.second, interfaceNumber);
             libusb_close(pair.second);
          }
       }
       m_usbDevices.clear();
       m_usbInterfaces.clear();
+      m_usbDriverDetached.clear();
 
       if (m_usbContext)
       {
@@ -644,6 +649,7 @@ void PacDriveSingleton::OpenUsbDevice(int index)
       int interfaceNumber = 0;
       if (device.type == DeviceType::IPACIO)
       {
+         interfaceNumber = -1;
          libusb_config_descriptor* config = nullptr;
          if (libusb_get_active_config_descriptor(libusb_get_device(handle), &config) == 0 && config)
          {
@@ -651,21 +657,27 @@ void PacDriveSingleton::OpenUsbDevice(int index)
                interfaceNumber = config->interface[config->bNumInterfaces - 1].altsetting[0].bInterfaceNumber;
             libusb_free_config_descriptor(config);
          }
+         if (interfaceNumber < 0)
+         {
+            Log::Warning(StringExtensions::Build("The LED interface of the Ultimate I/O {0} could not be identified, it is not used.", std::to_string(device.deviceId)));
+            libusb_close(handle);
+            return;
+         }
       }
 
-      if (libusb_kernel_driver_active(handle, interfaceNumber) == 1)
-      {
-         libusb_detach_kernel_driver(handle, interfaceNumber);
-      }
+      bool detached = libusb_kernel_driver_active(handle, interfaceNumber) == 1 && libusb_detach_kernel_driver(handle, interfaceNumber) == 0;
 
       int result = libusb_claim_interface(handle, interfaceNumber);
       if (result == 0)
       {
          m_usbDevices[index] = handle;
          m_usbInterfaces[index] = interfaceNumber;
+         m_usbDriverDetached[index] = detached;
       }
       else
       {
+         if (detached)
+            libusb_attach_kernel_driver(handle, interfaceNumber);
          libusb_close(handle);
       }
    }
@@ -685,10 +697,13 @@ void PacDriveSingleton::CloseUsbDevice(int index)
          interfaceNumber = interfaceIt->second;
          m_usbInterfaces.erase(interfaceIt);
       }
+      bool detached = m_usbDriverDetached[index];
+      m_usbDriverDetached.erase(index);
       if (it->second)
       {
          libusb_release_interface(it->second, interfaceNumber);
-         libusb_attach_kernel_driver(it->second, interfaceNumber);
+         if (detached)
+            libusb_attach_kernel_driver(it->second, interfaceNumber);
          libusb_close(it->second);
       }
       m_usbDevices.erase(it);
