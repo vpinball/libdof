@@ -365,13 +365,14 @@ void PacLed64::PacLed64Unit::SendPacLed64Update()
       return;
 
    std::lock_guard<std::mutex> updateLock(m_pacLed64UpdateLocker);
-   std::lock_guard<std::mutex> valueLock(m_valueChangeLocker);
+   {
+      std::lock_guard<std::mutex> valueLock(m_valueChangeLocker);
+      if (!m_updateRequired && !m_forceFullUpdate)
+         return;
 
-   if (!m_updateRequired && !m_forceFullUpdate)
-      return;
-
-   CopyNewToCurrent();
-   m_updateRequired = false;
+      CopyNewToCurrent();
+      m_updateRequired = false;
+   }
 
    uint8_t intensityUpdatesRequired = 0;
    uint8_t stateUpdatesRequired = 0;
