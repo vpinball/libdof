@@ -102,6 +102,8 @@ public:
    virtual void Initialize() = 0;
    virtual void SendCommand(UMXCommand command, const std::vector<uint8_t>& parameters = { }) = 0;
    virtual void WaitAck(uint8_t command) = 0;
+   virtual bool IsLost() const { return false; }
+   virtual void Release() { }
 
    std::vector<LedStripDescriptor> m_ledStrips;
    std::vector<DataLine> m_dataLines;

@@ -129,9 +129,13 @@ public:
       int NumOutputs() const { return m_numOutputs; }
       const std::string& GetSerial() const { return m_serial; }
 
-      void AllOff();
+      bool AllOff();
       bool Reopen();
+      void Close();
       bool LastWriteFailed() const { return m_lastWriteFailed; }
+      bool NeedsReopen() const { return m_needsReopen; }
+      bool HasSerial() const { return !m_serial.empty() && m_serial != "<not available>"; }
+      bool IsLost() const { return m_needsReopen && !HasSerial(); }
       void ReadPwmOutputsConfig();
       bool HasOutputEnabled(uint8_t extNum, uint8_t outputNum);
       bool SupportMx();
@@ -179,6 +183,7 @@ public:
 
       hid_device* m_hidDevice;
       bool m_lastWriteFailed = false;
+      bool m_needsReopen = false;
 
       static const Version s_minimalMxVersion;
       static const Version s_newProtocolVersion;

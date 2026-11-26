@@ -206,19 +206,17 @@ void DudesCab::ConnectToController()
    auto it = std::find_if(devices.begin(), devices.end(), [this](Device* d) { return d->UnitNo() == m_number; });
    if (it == devices.end())
       return;
-   if ((*it)->LastWriteFailed() && !(*it)->Reopen())
+   if ((*it)->NeedsReopen() && !(*it)->Reopen())
    {
       m_dev = nullptr;
       m_cacheInvalid = true;
-      if ((*it)->GetSerial().empty() || (*it)->GetSerial() == "<not available>")
+      if (!(*it)->HasSerial())
          throw std::runtime_error(StringExtensions::Build("Dude's Cab {0} reports no serial number and cannot be opened again", GetName()));
       return;
    }
-   if (m_dev != *it)
-   {
-      m_dev = *it;
+   m_dev = *it;
+   if (GetNumberOfOutputs() != m_dev->NumOutputs())
       SetNumberOfOutputs(m_dev->NumOutputs());
-   }
    m_oldOutputValues.assign(GetNumberOfOutputs(), 0);
    m_cacheInvalid = true;
 }
@@ -502,8 +500,9 @@ bool DudesCab::Device::Reopen()
       hid_close(m_hidDevice);
    m_hidDevice = nullptr;
    m_lastWriteFailed = true;
+   m_needsReopen = true;
 
-   if (m_serial.empty() || m_serial == "<not available>")
+   if (!HasSerial())
       return false;
    const char* candidate = nullptr;
    struct hid_device_info* devs = hid_enumerate(m_vendorID, m_productID);
@@ -539,7 +538,16 @@ bool DudesCab::Device::Reopen()
    if (!m_hidDevice)
       return false;
    m_lastWriteFailed = false;
+   m_needsReopen = false;
    return true;
+}
+
+void DudesCab::Device::Close()
+{
+   if (m_hidDevice)
+      hid_close(m_hidDevice);
+   m_hidDevice = nullptr;
+   m_needsReopen = true;
 }
 
 std::string DudesCab::Device::ToString() const { return StringExtensions::Build("{0} (name: {1} unit:{2})", m_devicename, m_name, std::to_string(m_unitNo)); }
@@ -606,7 +614,11 @@ bool DudesCab::Device::HasOutputEnabled(uint8_t extNum, uint8_t outputNum)
 
 bool DudesCab::Device::SupportMx() { return m_firmwareVersion >= s_minimalMxVersion; }
 
-void DudesCab::Device::AllOff() { SendCommand(HIDReportType::RT_PWM_ALLOFF); }
+bool DudesCab::Device::AllOff()
+{
+   SendCommand(HIDReportType::RT_PWM_ALLOFF);
+   return !m_lastWriteFailed;
+}
 
 std::vector<uint8_t> DudesCab::Device::ReadUSB(uint8_t command)
 {
@@ -695,7 +707,10 @@ void DudesCab::Device::SendCommand(RIDType rid, uint8_t command, const std::vect
 {
    m_lastWriteFailed = true;
    if (!m_hidDevice)
+   {
+      m_needsReopen = true;
       return;
+   }
    m_lastWriteFailed = false;
 
    if (rid == RIDType::RIDOutputs)
@@ -728,7 +743,10 @@ void DudesCab::Device::SendCommand(RIDType rid, uint8_t command, const std::vect
       }
 
       if (!WriteUSB(sendData))
+      {
          m_lastWriteFailed = true;
+         m_needsReopen = true;
+      }
    }
 }
 

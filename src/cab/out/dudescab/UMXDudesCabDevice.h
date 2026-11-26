@@ -17,6 +17,8 @@ public:
    void Initialize() override;
    void SendCommand(UMXCommand command, const std::vector<uint8_t>& parameters = { }) override;
    void WaitAck(uint8_t command) override;
+   bool IsLost() const override { return m_device && m_device->IsLost(); }
+   void Release() override;
 
    DudesCab::Device* GetDevice() const { return m_device; }
    void SetDevice(DudesCab::Device* device) { m_device = device; }
