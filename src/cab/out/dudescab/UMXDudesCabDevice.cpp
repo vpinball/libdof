@@ -11,7 +11,7 @@ UMXDudesCabDevice::UMXDudesCabDevice()
 {
 }
 
-UMXDudesCabDevice::~UMXDudesCabDevice() { }
+UMXDudesCabDevice::~UMXDudesCabDevice() { delete m_device; }
 
 void UMXDudesCabDevice::Initialize()
 {
