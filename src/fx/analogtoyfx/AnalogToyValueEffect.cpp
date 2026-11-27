@@ -34,4 +34,18 @@ void AnalogToyValueEffect::Init(Table* table) { AnalogToyEffectBase::Init(table)
 
 void AnalogToyValueEffect::Finish() { AnalogToyEffectBase::Finish(); }
 
+void AnalogToyValueEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   AnalogToyEffectBase::DeserializeFromXml(element);
+
+   AnalogAlpha analogAlpha;
+   FadeModeEnum fadeMode;
+   if (ReadXmlAnalogAlpha(element, "ActiveValue", analogAlpha))
+      SetActiveValue(analogAlpha);
+   if (ReadXmlAnalogAlpha(element, "InactiveValue", analogAlpha))
+      SetInactiveValue(analogAlpha);
+   if (ReadXmlFadeMode(element, "FadeMode", fadeMode))
+      SetFadeMode(fadeMode);
+}
+
 }

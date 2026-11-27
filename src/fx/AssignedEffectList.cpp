@@ -45,4 +45,20 @@ void AssignedEffectList::Finish()
    clear();
 }
 
+bool AssignedEffectList::FromXml(const tinyxml2::XMLElement* element)
+{
+   if (!element)
+      return false;
+
+   for (const tinyxml2::XMLElement* assignedEffectElement = element->FirstChildElement("AssignedEffect"); assignedEffectElement;
+      assignedEffectElement = assignedEffectElement->NextSiblingElement("AssignedEffect"))
+   {
+      const tinyxml2::XMLElement* effectNameElement = assignedEffectElement->FirstChildElement("EffectName");
+      if (effectNameElement && effectNameElement->GetText())
+         Add(effectNameElement->GetText());
+   }
+
+   return true;
+}
+
 }

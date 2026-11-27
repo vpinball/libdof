@@ -50,4 +50,13 @@ void DelayEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void DelayEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   int value;
+   if (ReadXmlInt(element, "DelayMs", value))
+      SetDelayMs(value);
+}
+
 }

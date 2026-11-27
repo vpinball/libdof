@@ -74,4 +74,16 @@ void MinDurationEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void MinDurationEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   int value;
+   RetriggerBehaviourEnum retriggerBehaviour;
+   if (ReadXmlRetriggerBehaviour(element, "RetriggerBehaviour", retriggerBehaviour))
+      SetRetriggerBehaviour(retriggerBehaviour);
+   if (ReadXmlInt(element, "MinDurationMs", value))
+      SetMinDurationMs(value);
+}
+
 }

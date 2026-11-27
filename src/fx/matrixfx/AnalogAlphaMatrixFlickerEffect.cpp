@@ -21,4 +21,15 @@ AnalogAlpha AnalogAlphaMatrixFlickerEffect::GetEffectValue(int triggerValue)
    return d;
 }
 
+void AnalogAlphaMatrixFlickerEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixFlickerEffectBase<AnalogAlpha>::DeserializeFromXml(element);
+
+   AnalogAlpha analogAlpha;
+   if (ReadXmlAnalogAlpha(element, "ActiveValue", analogAlpha))
+      SetActiveValue(analogAlpha);
+   if (ReadXmlAnalogAlpha(element, "InactiveValue", analogAlpha))
+      SetInactiveValue(analogAlpha);
+}
+
 }

@@ -33,4 +33,18 @@ void RGBAColorEffect::Init(Table* table) { RGBAEffectBase::Init(table); }
 
 void RGBAColorEffect::Finish() { RGBAEffectBase::Finish(); }
 
+void RGBAColorEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   RGBAEffectBase::DeserializeFromXml(element);
+
+   RGBAColor color;
+   FadeModeEnum fadeMode;
+   if (ReadXmlRGBAColor(element, "ActiveColor", color))
+      SetActiveColor(color);
+   if (ReadXmlRGBAColor(element, "InactiveColor", color))
+      SetInactiveColor(color);
+   if (ReadXmlFadeMode(element, "FadeMode", fadeMode))
+      SetFadeMode(fadeMode);
+}
+
 }

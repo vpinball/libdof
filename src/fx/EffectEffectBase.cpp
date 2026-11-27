@@ -68,4 +68,13 @@ void EffectEffectBase::Finish()
    EffectBase::Finish();
 }
 
+void EffectEffectBase::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectBase::DeserializeFromXml(element);
+
+   std::string text;
+   if (ReadXmlString(element, "TargetEffectName", text))
+      SetTargetEffectName(text);
+}
+
 }

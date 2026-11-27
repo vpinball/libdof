@@ -28,6 +28,9 @@ public:
 
    virtual std::string GetXmlElementName() const override { return "RGBAColorEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    RGBAColor m_activeColor;
    RGBAColor m_inactiveColor;

@@ -3,6 +3,8 @@
 #include "AssignedEffect.h"
 #include "DOF/DOF.h"
 
+#include <tinyxml2/tinyxml2.h>
+
 namespace DOF
 {
 
@@ -19,6 +21,7 @@ public:
    void Trigger(TableElementData tableElementData);
    void Init(Table* table);
    void Finish();
+   bool FromXml(const tinyxml2::XMLElement* element);
 };
 
 }

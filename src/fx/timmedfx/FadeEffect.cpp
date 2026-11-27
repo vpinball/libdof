@@ -93,4 +93,25 @@ void FadeEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void FadeEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   std::string text;
+   int value;
+   if (ReadXmlInt(element, "FadeUpDuration", value))
+      SetFadeUpDuration(value);
+   if (ReadXmlInt(element, "FadeDownDuration", value))
+      SetFadeDownDuration(value);
+   if (ReadXmlString(element, "FadeDurationMode", text))
+   {
+      if (text == "CurrentToTarget")
+         SetFadeDurationMode(FadeEffectDurationModeEnum::CurrentToTarget);
+      else if (text == "FullValueRange")
+         SetFadeDurationMode(FadeEffectDurationModeEnum::FullValueRange);
+      else
+         ThrowInvalidXmlValue("FadeDurationMode", text);
+   }
+}
+
 }

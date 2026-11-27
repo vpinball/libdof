@@ -40,6 +40,8 @@ public:
    virtual void Finish() override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual MatrixElementType GetEffectValue(int triggerValue) = 0;
 
 private:
@@ -268,6 +270,23 @@ template <typename MatrixElementType> void MatrixFlickerEffectBase<MatrixElement
    m_active = false;
    m_flickerTableElementData = nullptr;
    MatrixEffectBase<MatrixElementType>::Finish();
+}
+
+template <typename MatrixElementType> void MatrixFlickerEffectBase<MatrixElementType>::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixEffectBase<MatrixElementType>::DeserializeFromXml(element);
+
+   int value;
+   if (EffectBase::ReadXmlInt(element, "Density", value))
+      this->SetDensity(value);
+   if (EffectBase::ReadXmlInt(element, "MinFlickerDurationMs", value))
+      this->SetMinFlickerDurationMs(value);
+   if (EffectBase::ReadXmlInt(element, "MaxFlickerDurationMs", value))
+      this->SetMaxFlickerDurationMs(value);
+   if (EffectBase::ReadXmlInt(element, "FlickerFadeUpDurationMs", value))
+      this->SetFlickerFadeUpDurationMs(value);
+   if (EffectBase::ReadXmlInt(element, "FlickerFadeDownDurationMs", value))
+      this->SetFlickerFadeDownDurationMs(value);
 }
 
 }

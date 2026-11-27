@@ -30,6 +30,9 @@ public:
    virtual void Trigger(TableElementData* tableElementData) override;
 
    virtual std::string GetXmlElementName() const override { return "RGBAMatrixShapeEffect"; }
+
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
 };
 
 }

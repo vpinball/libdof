@@ -115,4 +115,29 @@ void BlinkEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void BlinkEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   std::string text;
+   int value;
+   if (ReadXmlInt(element, "HighValue", value))
+      SetHighValue(value);
+   if (ReadXmlInt(element, "LowValue", value))
+      SetLowValue(value);
+   if (ReadXmlInt(element, "DurationActiveMs", value))
+      SetDurationActiveMs(value);
+   if (ReadXmlInt(element, "DurationInactiveMs", value))
+      SetDurationInactiveMs(value);
+   if (ReadXmlString(element, "UntriggerBehaviour", text))
+   {
+      if (text == "Immediate")
+         SetUntriggerBehaviour(BlinkEffectUntriggerBehaviourEnum::Immediate);
+      else if (text == "CompleteHigh")
+         SetUntriggerBehaviour(BlinkEffectUntriggerBehaviourEnum::CompleteHigh);
+      else
+         ThrowInvalidXmlValue("UntriggerBehaviour", text);
+   }
+}
+
 }

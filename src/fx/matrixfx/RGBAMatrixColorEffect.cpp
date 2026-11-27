@@ -25,4 +25,15 @@ RGBAColor RGBAMatrixColorEffect::GetEffectValue(int triggerValue)
    return d;
 }
 
+void RGBAMatrixColorEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixValueEffectBase<RGBAColor>::DeserializeFromXml(element);
+
+   RGBAColor color;
+   if (ReadXmlRGBAColor(element, "ActiveColor", color))
+      SetActiveColor(color);
+   if (ReadXmlRGBAColor(element, "InactiveColor", color))
+      SetInactiveColor(color);
+}
+
 }

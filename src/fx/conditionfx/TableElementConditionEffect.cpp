@@ -243,4 +243,13 @@ void TableElementConditionEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void TableElementConditionEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   std::string text;
+   if (ReadXmlString(element, "Condition", text))
+      SetCondition(text);
+}
+
 }

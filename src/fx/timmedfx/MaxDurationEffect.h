@@ -23,6 +23,9 @@ public:
    virtual void Finish() override;
    virtual std::string GetXmlElementName() const override { return "MaxDurationEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    void DurationEnd();
 

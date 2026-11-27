@@ -19,6 +19,9 @@ public:
    virtual void Finish() override;
    virtual std::string GetXmlElementName() const override { return "ExtendDurationEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    void ExtendedDurationEnd();
 

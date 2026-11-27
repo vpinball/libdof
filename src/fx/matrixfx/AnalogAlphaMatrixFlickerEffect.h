@@ -20,6 +20,8 @@ public:
    virtual std::string GetXmlElementName() const override { return "AnalogAlphaMatrixFlickerEffect"; }
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual AnalogAlpha GetEffectValue(int triggerValue) override;
 
 private:

@@ -109,4 +109,13 @@ void RGBAMatrixShapeEffect::Trigger(TableElementData* tableElementData)
    }
 }
 
+void RGBAMatrixShapeEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixEffectBase<RGBAColor>::DeserializeFromXml(element);
+
+   std::string text;
+   if (ReadXmlString(element, "ShapeName", text))
+      SetShapeName(text);
+}
+
 }

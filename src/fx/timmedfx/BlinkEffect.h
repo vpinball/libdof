@@ -32,6 +32,9 @@ public:
 
    virtual std::string GetXmlElementName() const override { return "BlinkEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    void StartBlinking(TableElementData* tableElementData);
    void StopBlinking();

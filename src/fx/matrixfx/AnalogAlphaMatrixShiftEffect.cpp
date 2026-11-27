@@ -21,4 +21,15 @@ AnalogAlpha AnalogAlphaMatrixShiftEffect::GetEffectValue(int triggerValue)
    return d;
 }
 
+void AnalogAlphaMatrixShiftEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixShiftEffectBase<AnalogAlpha>::DeserializeFromXml(element);
+
+   AnalogAlpha analogAlpha;
+   if (ReadXmlAnalogAlpha(element, "ActiveValue", analogAlpha))
+      SetActiveValue(analogAlpha);
+   if (ReadXmlAnalogAlpha(element, "InactiveValue", analogAlpha))
+      SetInactiveValue(analogAlpha);
+}
+
 }

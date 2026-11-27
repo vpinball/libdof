@@ -33,6 +33,8 @@ public:
    virtual void Trigger(TableElementData* tableElementData) override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual MatrixElementType GetEffectValue(int triggerValue, double time, double value, double x, double y) = 0;
 
 private:
@@ -190,6 +192,19 @@ template <typename MatrixElementType> double MatrixPlasmaEffectBase<MatrixElemen
    v = ((v + 3) / 6.0);
 
    return v;
+}
+
+template <typename MatrixElementType> void MatrixPlasmaEffectBase<MatrixElementType>::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixEffectBase<MatrixElementType>::DeserializeFromXml(element);
+
+   int value;
+   if (EffectBase::ReadXmlInt(element, "PlasmaSpeed", value))
+      this->SetPlasmaSpeed(value);
+   if (EffectBase::ReadXmlInt(element, "PlasmaScale", value))
+      this->SetPlasmaScale(value);
+   if (EffectBase::ReadXmlInt(element, "PlasmaDensity", value))
+      this->SetPlasmaDensity(value);
 }
 
 }
