@@ -4,6 +4,7 @@
 #include "../Log.h"
 #include "../general/StringExtensions.h"
 #include <exception>
+#include <stdexcept>
 
 namespace DOF
 {
@@ -95,14 +96,33 @@ bool EffectList::FromXml(const tinyxml2::XMLElement* element)
       IEffect* effect = factory.CreateEffect(typeName);
       if (effect)
       {
-         if (effect->FromXml(effectElement))
+         bool loaded;
+         try
          {
-            Add(effect);
+            loaded = effect->FromXml(effectElement);
          }
-         else
+         catch (...)
+         {
+            delete effect;
+            throw;
+         }
+         if (!loaded)
          {
             Log::Warning(StringExtensions::Build("Failed to deserialize effect of type: {0}", typeName));
             delete effect;
+         }
+         else if (!effectElement->FirstChildElement("Name"))
+         {
+            delete effect;
+            throw std::runtime_error(StringExtensions::Build("Effect of type {0} has no name", typeName));
+         }
+         else if (effect->GetName().empty() || Contains(effect->GetName()))
+         {
+            delete effect;
+         }
+         else
+         {
+            Add(effect);
          }
       }
       else
