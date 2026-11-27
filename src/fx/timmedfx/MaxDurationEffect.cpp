@@ -66,4 +66,16 @@ void MaxDurationEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void MaxDurationEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   int value;
+   RetriggerBehaviourEnum retriggerBehaviour;
+   if (ReadXmlRetriggerBehaviour(element, "RetriggerBehaviour", retriggerBehaviour))
+      SetRetriggerBehaviour(retriggerBehaviour);
+   if (ReadXmlInt(element, "MaxDurationMs", value))
+      SetMaxDurationMs(value);
+}
+
 }

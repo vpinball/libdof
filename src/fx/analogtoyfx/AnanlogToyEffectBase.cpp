@@ -53,4 +53,16 @@ void AnalogToyEffectBase::Finish()
    EffectBase::Finish();
 }
 
+void AnalogToyEffectBase::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectBase::DeserializeFromXml(element);
+
+   std::string text;
+   int value;
+   if (ReadXmlString(element, "ToyName", text))
+      SetToyName(text);
+   if (ReadXmlInt(element, "LayerNr", value))
+      SetLayerNr(value);
+}
+
 }

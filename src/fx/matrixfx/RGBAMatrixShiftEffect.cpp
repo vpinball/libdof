@@ -23,4 +23,15 @@ RGBAColor RGBAMatrixShiftEffect::GetEffectValue(int triggerValue)
    return d;
 }
 
+void RGBAMatrixShiftEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixShiftEffectBase<RGBAColor>::DeserializeFromXml(element);
+
+   RGBAColor color;
+   if (ReadXmlRGBAColor(element, "ActiveColor", color))
+      SetActiveColor(color);
+   if (ReadXmlRGBAColor(element, "InactiveColor", color))
+      SetInactiveColor(color);
+}
+
 }

@@ -22,6 +22,8 @@ public:
    virtual void Init(Table* table) override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual RGBAColor GetEffectValue(int triggerValue, PixelData pixel) override;
 
 private:

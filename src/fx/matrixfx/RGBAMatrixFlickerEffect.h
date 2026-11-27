@@ -20,6 +20,8 @@ public:
    virtual std::string GetXmlElementName() const override { return "RGBAMatrixFlickerEffect"; }
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual RGBAColor GetEffectValue(int triggerValue) override;
 
 private:

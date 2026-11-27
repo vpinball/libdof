@@ -22,6 +22,8 @@ public:
    virtual std::string GetXmlElementName() const override { return "RGBAMatrixPlasmaEffect"; }
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual RGBAColor GetEffectValue(int triggerValue, double time, double value, double x, double y) override;
 
 private:

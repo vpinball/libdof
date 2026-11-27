@@ -41,6 +41,8 @@ public:
    virtual void Finish() override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    void ControlAnimation(int fadeValue);
    void Animate();
    void StopAnimation();
@@ -296,6 +298,42 @@ template <typename MatrixElementType> void MatrixBitmapAnimationEffectBase<Matri
    StopAnimation();
    CleanupPixels();
    MatrixEffectBase<MatrixElementType>::Finish();
+}
+
+template <typename MatrixElementType> void MatrixBitmapAnimationEffectBase<MatrixElementType>::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixBitmapEffectBase<MatrixElementType>::DeserializeFromXml(element);
+
+   std::string text;
+   int value;
+   if (EffectBase::ReadXmlString(element, "AnimationStepDirection", text))
+   {
+      if (text == "Frame")
+         this->SetAnimationStepDirection(MatrixAnimationStepDirectionEnum::Frame);
+      else if (text == "Right")
+         this->SetAnimationStepDirection(MatrixAnimationStepDirectionEnum::Right);
+      else if (text == "Down")
+         this->SetAnimationStepDirection(MatrixAnimationStepDirectionEnum::Down);
+      else
+         EffectBase::ThrowInvalidXmlValue("AnimationStepDirection", text);
+   }
+   if (EffectBase::ReadXmlInt(element, "AnimationStepSize", value))
+      this->SetAnimationStepSize(value);
+   if (EffectBase::ReadXmlInt(element, "AnimationFrameCount", value))
+      this->SetAnimationFrameCount(value);
+   if (EffectBase::ReadXmlString(element, "AnimationBehaviour", text))
+   {
+      if (text == "Once")
+         this->SetAnimationBehaviour(AnimationBehaviourEnum::Once);
+      else if (text == "Loop")
+         this->SetAnimationBehaviour(AnimationBehaviourEnum::Loop);
+      else if (text == "Continue")
+         this->SetAnimationBehaviour(AnimationBehaviourEnum::Continue);
+      else
+         EffectBase::ThrowInvalidXmlValue("AnimationBehaviour", text);
+   }
+   if (EffectBase::ReadXmlInt(element, "AnimationFrameDurationMs", value))
+      this->SetAnimationFrameDurationMs(value);
 }
 
 }

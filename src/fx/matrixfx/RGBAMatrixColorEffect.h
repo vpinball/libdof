@@ -21,6 +21,8 @@ public:
    void SetInactiveColor(const RGBAColor& value) { m_inactiveColor = value; }
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual RGBAColor GetEffectValue(int triggerValue) override;
 
 private:

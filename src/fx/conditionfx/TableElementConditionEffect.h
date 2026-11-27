@@ -34,6 +34,9 @@ public:
 
    virtual std::string GetXmlElementName() const override { return "TableElementConditionEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    std::string m_condition;
    bool m_conditionExpressionValid;

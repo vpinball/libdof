@@ -27,6 +27,9 @@ public:
 
    virtual std::string GetXmlElementName() const override { return "DurationEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    void DurationEnd();
 

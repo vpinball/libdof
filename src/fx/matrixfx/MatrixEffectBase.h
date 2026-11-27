@@ -43,6 +43,8 @@ public:
    virtual void Finish() override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    IMatrixToy<MatrixElementType>* m_matrix;
    MatrixElementType* m_matrixLayer;
    Table* m_table;
@@ -143,6 +145,30 @@ template <typename MatrixElementType> void MatrixEffectBase<MatrixElementType>::
    m_matrix = nullptr;
    m_table = nullptr;
    EffectBase::Finish();
+}
+
+template <typename MatrixElementType> void MatrixEffectBase<MatrixElementType>::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectBase::DeserializeFromXml(element);
+
+   std::string text;
+   int value;
+   float floatValue;
+   FadeModeEnum fadeMode;
+   if (EffectBase::ReadXmlString(element, "ToyName", text))
+      this->SetToyName(text);
+   if (EffectBase::ReadXmlFloat(element, "Width", floatValue))
+      this->SetWidth(floatValue);
+   if (EffectBase::ReadXmlFloat(element, "Height", floatValue))
+      this->SetHeight(floatValue);
+   if (EffectBase::ReadXmlFloat(element, "Left", floatValue))
+      this->SetLeft(floatValue);
+   if (EffectBase::ReadXmlFloat(element, "Top", floatValue))
+      this->SetTop(floatValue);
+   if (EffectBase::ReadXmlInt(element, "LayerNr", value))
+      this->SetLayerNr(value);
+   if (EffectBase::ReadXmlFadeMode(element, "FadeMode", fadeMode))
+      this->SetFadeMode(fadeMode);
 }
 
 }

@@ -55,4 +55,13 @@ void ExtendDurationEffect::Finish()
    EffectEffectBase::Finish();
 }
 
+void ExtendDurationEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   EffectEffectBase::DeserializeFromXml(element);
+
+   int value;
+   if (ReadXmlInt(element, "DurationMs", value))
+      SetDurationMs(value);
+}
+
 }

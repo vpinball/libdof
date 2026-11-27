@@ -24,6 +24,8 @@ public:
    virtual void Finish() override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    Table* m_table;
    IRGBAToy* m_rgbaToy;
    RGBAColor* m_layer;

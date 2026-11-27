@@ -21,6 +21,8 @@ public:
    void SetInactiveValue(const AnalogAlpha& value) { m_inactiveValue = value; }
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual AnalogAlpha GetEffectValue(int triggerValue) override;
 
 private:

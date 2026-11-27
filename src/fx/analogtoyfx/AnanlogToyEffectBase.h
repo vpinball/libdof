@@ -26,6 +26,8 @@ public:
    virtual void Finish() override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    Table* m_table;
    IAnalogAlphaToy* m_toy;
    AnalogAlpha* m_layer;

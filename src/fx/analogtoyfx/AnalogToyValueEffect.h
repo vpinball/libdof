@@ -28,6 +28,9 @@ public:
 
    virtual std::string GetXmlElementName() const override { return "AnalogToyValueEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    AnalogAlpha m_activeValue;
    AnalogAlpha m_inactiveValue;

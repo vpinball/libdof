@@ -35,6 +35,8 @@ public:
    virtual void Finish() override;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    virtual MatrixElementType GetEffectValue(int triggerValue) = 0;
 
 private:
@@ -254,6 +256,31 @@ template <typename MatrixElementType> void MatrixShiftEffectBase<MatrixElementTy
    {
    }
    MatrixEffectBase<MatrixElementType>::Finish();
+}
+
+template <typename MatrixElementType> void MatrixShiftEffectBase<MatrixElementType>::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixEffectBase<MatrixElementType>::DeserializeFromXml(element);
+
+   std::string text;
+   float floatValue;
+   if (EffectBase::ReadXmlString(element, "ShiftDirection", text))
+   {
+      if (text == "Left")
+         this->SetShiftDirection(MatrixShiftDirectionEnum::Left);
+      else if (text == "Right")
+         this->SetShiftDirection(MatrixShiftDirectionEnum::Right);
+      else if (text == "Up")
+         this->SetShiftDirection(MatrixShiftDirectionEnum::Up);
+      else if (text == "Down")
+         this->SetShiftDirection(MatrixShiftDirectionEnum::Down);
+      else
+         EffectBase::ThrowInvalidXmlValue("ShiftDirection", text);
+   }
+   if (EffectBase::ReadXmlFloat(element, "ShiftSpeed", floatValue))
+      this->SetShiftSpeed(floatValue);
+   if (EffectBase::ReadXmlFloat(element, "ShiftAcceleration", floatValue))
+      this->SetShiftAcceleration(floatValue);
 }
 
 }

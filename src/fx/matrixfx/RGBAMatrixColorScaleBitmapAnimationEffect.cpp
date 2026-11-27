@@ -47,4 +47,15 @@ RGBAColor RGBAMatrixColorScaleBitmapAnimationEffect::GetEffectValue(int triggerV
    return d;
 }
 
+void RGBAMatrixColorScaleBitmapAnimationEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixBitmapAnimationEffectBase<RGBAColor>::DeserializeFromXml(element);
+
+   RGBAColor color;
+   if (ReadXmlRGBAColor(element, "ActiveColor", color))
+      SetActiveColor(color);
+   if (ReadXmlRGBAColor(element, "InactiveColor", color))
+      SetInactiveColor(color);
+}
+
 }

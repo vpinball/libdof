@@ -44,4 +44,15 @@ RGBAColor RGBAMatrixColorScaleBitmapEffect::GetEffectValue(int triggerValue, Pix
    return d;
 }
 
+void RGBAMatrixColorScaleBitmapEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixBitmapEffectBase<RGBAColor>::DeserializeFromXml(element);
+
+   RGBAColor color;
+   if (ReadXmlRGBAColor(element, "ActiveColor", color))
+      SetActiveColor(color);
+   if (ReadXmlRGBAColor(element, "InactiveColor", color))
+      SetInactiveColor(color);
+}
+
 }

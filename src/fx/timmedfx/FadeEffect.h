@@ -27,6 +27,9 @@ public:
 
    virtual std::string GetXmlElementName() const override { return "FadeEffect"; }
 
+protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
 private:
    static const int FadingRefreshIntervalMs = 30;
    void FadingStep();

@@ -29,4 +29,17 @@ RGBAColor RGBAMatrixPlasmaEffect::GetEffectValue(int triggerValue, double time, 
    return d;
 }
 
+void RGBAMatrixPlasmaEffect::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixPlasmaEffectBase<RGBAColor>::DeserializeFromXml(element);
+
+   RGBAColor color;
+   if (ReadXmlRGBAColor(element, "ActiveColor1", color))
+      SetActiveColor1(color);
+   if (ReadXmlRGBAColor(element, "ActiveColor2", color))
+      SetActiveColor2(color);
+   if (ReadXmlRGBAColor(element, "InactiveColor", color))
+      SetInactiveColor(color);
+}
+
 }

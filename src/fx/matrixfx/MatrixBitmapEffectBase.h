@@ -47,6 +47,8 @@ public:
    virtual MatrixElementType GetEffectValue(int triggerValue, PixelData pixel) = 0;
 
 protected:
+   virtual void DeserializeFromXml(const tinyxml2::XMLElement* element) override;
+
    void OutputBitmap(int fadeValue);
    void CleanupPixels();
    PixelData** m_pixels;
@@ -56,6 +58,7 @@ protected:
 
 private:
    FilePattern* m_bitmapFilePattern;
+   FilePattern* m_ownedBitmapFilePattern;
 
 private:
    int m_bitmapFrameNumber;
@@ -71,6 +74,7 @@ template <typename MatrixElementType>
 MatrixBitmapEffectBase<MatrixElementType>::MatrixBitmapEffectBase()
    : m_initOK(false)
    , m_bitmapFilePattern(nullptr)
+   , m_ownedBitmapFilePattern(nullptr)
    , m_pixels(nullptr)
    , m_bitmapFrameNumber(0)
    , m_bitmapLeft(0)
@@ -81,7 +85,11 @@ MatrixBitmapEffectBase<MatrixElementType>::MatrixBitmapEffectBase()
 {
 }
 
-template <typename MatrixElementType> MatrixBitmapEffectBase<MatrixElementType>::~MatrixBitmapEffectBase() { CleanupPixels(); }
+template <typename MatrixElementType> MatrixBitmapEffectBase<MatrixElementType>::~MatrixBitmapEffectBase()
+{
+   CleanupPixels();
+   delete m_ownedBitmapFilePattern;
+}
 
 template <typename MatrixElementType> void MatrixBitmapEffectBase<MatrixElementType>::SetBitmapFilePattern(FilePattern* value) { m_bitmapFilePattern = value; }
 
@@ -186,5 +194,39 @@ template <typename MatrixElementType> void MatrixBitmapEffectBase<MatrixElementT
    }
 }
 
+template <typename MatrixElementType> void MatrixBitmapEffectBase<MatrixElementType>::DeserializeFromXml(const tinyxml2::XMLElement* element)
+{
+   MatrixEffectBase<MatrixElementType>::DeserializeFromXml(element);
+
+   std::string text;
+   int value;
+   if (EffectBase::ReadXmlInt(element, "BitmapFrameNumber", value))
+      this->SetBitmapFrameNumber(value);
+   if (EffectBase::ReadXmlInt(element, "BitmapTop", value))
+      this->SetBitmapTop(value);
+   if (EffectBase::ReadXmlInt(element, "BitmapLeft", value))
+      this->SetBitmapLeft(value);
+   if (EffectBase::ReadXmlInt(element, "BitmapWidth", value))
+      this->SetBitmapWidth(value);
+   if (EffectBase::ReadXmlInt(element, "BitmapHeight", value))
+      this->SetBitmapHeight(value);
+   if (EffectBase::ReadXmlString(element, "DataExtractMode", text))
+   {
+      if (text == "SinglePixelTopLeft")
+         this->SetDataExtractMode(FastBitmapDataExtractModeEnum::SinglePixelTopLeft);
+      else if (text == "SinglePixelCenter")
+         this->SetDataExtractMode(FastBitmapDataExtractModeEnum::SinglePixelCenter);
+      else if (text == "BlendPixels")
+         this->SetDataExtractMode(FastBitmapDataExtractModeEnum::BlendPixels);
+      else
+         EffectBase::ThrowInvalidXmlValue("DataExtractMode", text);
+   }
+   if (EffectBase::ReadXmlString(element, "BitmapFilePattern", text))
+   {
+      delete m_ownedBitmapFilePattern;
+      m_ownedBitmapFilePattern = new FilePattern(text);
+      this->SetBitmapFilePattern(m_ownedBitmapFilePattern);
+   }
+}
 
 }
