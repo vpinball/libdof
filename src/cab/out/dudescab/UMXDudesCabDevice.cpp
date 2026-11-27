@@ -111,9 +111,15 @@ void UMXDudesCabDevice::Initialize()
 
 void UMXDudesCabDevice::SendCommand(UMXCommand command, const std::vector<uint8_t>& parameters)
 {
+   auto dudeCommand = UMXToDudeCommand(command);
+   if (command == UMXCommand::UMX_AllOff && m_device->NeedsReopen())
+   {
+      m_device->SendCommand(dudeCommand, parameters);
+      if (!m_device->LastWriteFailed())
+         return;
+   }
    if (m_device->NeedsReopen() && !m_device->Reopen() && m_device->IsLost())
       throw std::runtime_error(StringExtensions::Build("{0} reports no serial number and cannot be opened again", m_name));
-   auto dudeCommand = UMXToDudeCommand(command);
    m_device->SendCommand(dudeCommand, parameters);
    if (m_device->LastWriteFailed())
       throw std::runtime_error(StringExtensions::Build("Sending UMX command {0} failed", std::to_string(static_cast<int>(command))));
