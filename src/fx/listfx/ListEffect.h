@@ -23,6 +23,8 @@ public:
    virtual void Init(Table* table) override;
    virtual void Finish() override;
 
+   virtual std::string GetXmlElementName() const override { return "ListEffect"; }
+
 private:
    AssignedEffectList m_assignedEffects;
 };
