@@ -122,6 +122,19 @@ void TableElementConditionEffect::InitCondition()
 
    for (const std::string& var : variables)
    {
+      if (StringExtensions::StartsWith(var, "NamedElement_"))
+      {
+         TableElementData data(var.substr(13), 0);
+         m_table->GetTableElements()->UpdateState(&data);
+      }
+      else
+      {
+         TableElementTypeEnum elementType;
+         int number;
+         ParseTableElementVariable(var, elementType, number);
+         TableElementData data(elementType, number, 0);
+         m_table->GetTableElements()->UpdateState(&data);
+      }
       m_variables[var] = 0.0;
       m_symbolTable->add_variable(var, m_variables[var]);
    }
@@ -154,11 +167,11 @@ void TableElementConditionEffect::UpdateVariableValues()
 
       if (StringExtensions::StartsWith(varName, "NamedElement_"))
       {
-         std::string elementName = varName.substr(13);
+         std::string elementName = StringExtensions::ToUpper(varName.substr(13));
 
          for (TableElement* element : *tableElements)
          {
-            if (element->GetName() == elementName)
+            if (element->GetTableElementType() == TableElementTypeEnum::NamedElement && element->GetName() == elementName)
             {
                varValue = static_cast<double>(element->GetValue());
                break;

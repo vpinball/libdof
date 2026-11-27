@@ -42,7 +42,7 @@ void TableElementList::UpdateState(TableElementData* data)
       std::string name = StringExtensions::ToUpper(data->m_name);
       for (TableElement* element : *this)
       {
-         if (element && element->GetName() == name)
+         if (element && element->GetTableElementType() == TableElementTypeEnum::NamedElement && element->GetName() == name)
          {
             targetElement = element;
             break;
