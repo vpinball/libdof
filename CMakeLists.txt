@@ -131,7 +131,6 @@ set(LIBDOF_SOURCES
    src/fx/EffectEventArgs.cpp
    src/fx/EffectFactory.cpp
    src/fx/EffectList.cpp
-   src/fx/EffectRegistrations.cpp
    src/fx/IEffect.cpp
    src/fx/analogtoyfx/AnanlogToyEffectBase.cpp
    src/fx/analogtoyfx/AnalogToyValueEffect.cpp

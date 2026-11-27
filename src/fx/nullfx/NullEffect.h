@@ -16,6 +16,8 @@ public:
 
    virtual void Trigger(TableElementData* tableElementData) override;
    virtual void Init(Table* table) override;
+
+   virtual std::string GetXmlElementName() const override { return "NullEffect"; }
 };
 
 }
