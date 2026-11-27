@@ -258,7 +258,7 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
             }
             catch (const std::exception& e)
             {
-               Log::Exception(StringExtensions::Build("The table config {0} was skipped: {1}. Will use the LedControl config(s).", tableConfigFile->FullName(), e.what()));
+               Log::Exception(StringExtensions::Build("A exception occurred when loading table config: {0} - {1}", tableConfigFile->FullName(), e.what()));
             }
             if (m_table->IsAddLedControlConfig())
             {
