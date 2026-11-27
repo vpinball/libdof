@@ -15,6 +15,7 @@
 
 #include <tinyxml2/tinyxml2.h>
 #include <filesystem>
+#include <stdexcept>
 #include <fstream>
 
 
@@ -273,67 +274,124 @@ Table* Table::FromXml(const std::string& configXml)
    }
 
    Table* table = new Table();
-
-   tinyxml2::XMLElement* element = root->FirstChildElement("TableName");
-   if (element && element->GetText())
-      table->SetTableName(element->GetText());
-
-   element = root->FirstChildElement("AddLedControlConfig");
-   if (element)
+   try
    {
-      bool value;
-      if (element->QueryBoolText(&value) == tinyxml2::XML_SUCCESS)
-         table->SetAddLedControlConfig(value);
-   }
+      tinyxml2::XMLElement* element = root->FirstChildElement("TableName");
+      if (element && element->GetText())
+         table->SetTableName(element->GetText());
 
-   element = root->FirstChildElement("Effects");
-   if (element)
-   {
-      table->GetEffects()->FromXml(element);
-   }
-
-   element = root->FirstChildElement("TableElements");
-   if (element)
-   {
-      tinyxml2::XMLElement* tableElementNode = element->FirstChildElement("TableElement");
-      while (tableElementNode)
+      element = root->FirstChildElement("AddLedControlConfig");
+      if (element)
       {
+         bool value;
+         if (element->QueryBoolText(&value) == tinyxml2::XML_SUCCESS)
+            table->SetAddLedControlConfig(value);
+      }
 
-         tinyxml2::XMLElement* typeElement = tableElementNode->FirstChildElement("TableElementType");
-         TableElementTypeEnum type = TableElementTypeEnum::Unknown;
-         if (typeElement)
+      element = root->FirstChildElement("Effects");
+      if (element)
+      {
+         table->GetEffects()->FromXml(element);
+      }
+
+      element = root->FirstChildElement("TableElements");
+      if (element)
+      {
+         tinyxml2::XMLElement* tableElementNode = element->FirstChildElement("TableElement");
+         while (tableElementNode)
          {
-            int value;
-            if (typeElement->QueryIntText(&value) == tinyxml2::XML_SUCCESS)
-               type = (TableElementTypeEnum)value;
-         }
+            tinyxml2::XMLElement* typeElement = tableElementNode->FirstChildElement("TableElementType");
+            TableElementTypeEnum type = TableElementTypeEnum::Lamp;
+            std::string typeName = "Lamp";
+            if (typeElement)
+            {
+               int value;
+               typeName = typeElement->GetText() ? typeElement->GetText() : "";
+               if (StringExtensions::TryParseInt(typeName, value))
+               {
+                  if (value < 0 || value > 127 || std::string("?LWSGMNEDCB$").find((char)value) == std::string::npos)
+                     throw std::runtime_error(StringExtensions::Build("{0} is not a valid value for TableElementType", typeName));
+                  type = (TableElementTypeEnum)value;
+               }
+               else if (typeName == "Unknown")
+                  type = TableElementTypeEnum::Unknown;
+               else if (typeName == "Lamp")
+                  type = TableElementTypeEnum::Lamp;
+               else if (typeName == "Switch")
+                  type = TableElementTypeEnum::Switch;
+               else if (typeName == "Solenoid")
+                  type = TableElementTypeEnum::Solenoid;
+               else if (typeName == "GIString")
+                  type = TableElementTypeEnum::GIString;
+               else if (typeName == "Mech")
+                  type = TableElementTypeEnum::Mech;
+               else if (typeName == "GetMech")
+                  type = TableElementTypeEnum::GetMech;
+               else if (typeName == "EMTable")
+                  type = TableElementTypeEnum::EMTable;
+               else if (typeName == "LED")
+                  type = TableElementTypeEnum::LED;
+               else if (typeName == "Score")
+                  type = TableElementTypeEnum::Score;
+               else if (typeName == "ScoreDigit")
+                  type = TableElementTypeEnum::ScoreDigit;
+               else if (typeName == "NamedElement")
+                  type = TableElementTypeEnum::NamedElement;
+               else
+                  throw std::runtime_error(StringExtensions::Build("{0} is not a valid value for TableElementType", typeName));
+            }
 
-         tinyxml2::XMLElement* numberElement = tableElementNode->FirstChildElement("Number");
-         int number = 0;
-         if (numberElement)
-            numberElement->QueryIntText(&number);
+            tinyxml2::XMLElement* numberElement = tableElementNode->FirstChildElement("Number");
+            int number = 0;
+            if (numberElement)
+            {
+               std::string numberText = numberElement->GetText() ? numberElement->GetText() : "";
+               if (!StringExtensions::TryParseInt(numberText, number))
+                  throw std::runtime_error(StringExtensions::Build("{0} is not a valid value for Number", numberText));
+            }
 
-         tinyxml2::XMLElement* nameElement = tableElementNode->FirstChildElement("Name");
-         std::string name = "";
-         if (nameElement && nameElement->GetText())
-            name = nameElement->GetText();
+            tinyxml2::XMLElement* nameElement = tableElementNode->FirstChildElement("Name");
+            std::string name = "";
+            if (nameElement && nameElement->GetText())
+               name = StringExtensions::ToUpper(nameElement->GetText());
 
-         TableElement* tableElement = nullptr;
-         if (!name.empty())
-            tableElement = new TableElement(name, 0);
-         else
-            tableElement = new TableElement(type, number, 0);
+            if (type == TableElementTypeEnum::NamedElement && StringExtensions::IsNullOrWhiteSpace(name))
+               throw std::runtime_error("Named TableElements cant have a empty name when they are added to the list.");
 
-         if (tableElement)
+            for (TableElement* existing : *table->GetTableElements())
+            {
+               if (type != TableElementTypeEnum::NamedElement && existing->GetTableElementType() == type && existing->GetNumber() == number)
+                  throw std::runtime_error(StringExtensions::Build(
+                     "The TableElement {0} {1} cant be added to the list. Another entry with the same type and number does already exist.", typeName, std::to_string(number)));
+               if (type == TableElementTypeEnum::NamedElement && existing->GetTableElementType() == TableElementTypeEnum::NamedElement && existing->GetName() == name)
+                  throw std::runtime_error(
+                     StringExtensions::Build("The TableElement named {0} cant be added to the list. Another entry with the same name does already exist.", name));
+            }
+
+            TableElement* tableElement = new TableElement();
+            tableElement->SetTableElementType(type);
+            tableElement->SetNumber(number);
+            tableElement->SetName(name);
             table->GetTableElements()->push_back(tableElement);
 
-         tableElementNode = tableElementNode->NextSiblingElement("TableElement");
+            tinyxml2::XMLElement* assignedEffectsElement = tableElementNode->FirstChildElement("AssignedEffects");
+            if (assignedEffectsElement)
+               tableElement->GetAssignedEffects()->FromXml(assignedEffectsElement);
+
+            tableElementNode = tableElementNode->NextSiblingElement("TableElement");
+         }
+      }
+
+      element = root->FirstChildElement("AssignedStaticEffects");
+      if (element)
+      {
+         table->GetAssignedStaticEffects()->FromXml(element);
       }
    }
-
-   element = root->FirstChildElement("AssignedStaticEffects");
-   if (element)
+   catch (...)
    {
+      delete table;
+      throw;
    }
 
    table->SetConfigurationSource(TableConfigSourceEnum::TableConfigurationFile);
