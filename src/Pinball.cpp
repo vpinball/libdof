@@ -248,9 +248,9 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
             Log::Write(StringExtensions::Build("Will load table config from {0}", tableConfigFile->FullName()));
             try
             {
-               Table* newTable = Table::GetTableFromConfigXmlFile(tableFile->FullName());
+               Table* newTable = Table::GetTableFromConfigXmlFile(tableConfigFile->FullName());
                if (!newTable)
-                  throw std::runtime_error(StringExtensions::Build("{0} is not a valid table config", tableFile->FullName()));
+                  throw std::runtime_error(StringExtensions::Build("{0} is not a valid table config", tableConfigFile->FullName()));
                delete m_table;
                m_table = newTable;
                m_table->SetTableConfigurationFilename(tableConfigFile->FullName());
