@@ -256,6 +256,7 @@ std::vector<DudesCab::Device*> DudesCab::FindDevices()
 
    std::vector<Device*> dudedevices;
    std::vector<Device*> devices;
+   std::vector<Device*> unusedDevices;
 
    struct hid_device_info* devs = hid_enumerate(VendorID, ProductID);
    struct hid_device_info* cur_dev = devs;
@@ -360,6 +361,8 @@ std::vector<DudesCab::Device*> DudesCab::FindDevices()
                         dudeUMX->SetDevice(newDevice);
                         UMXControllerAutoConfigurator::AddUMXDevice(dudeUMX);
                      }
+                     else
+                        unusedDevices.push_back(newDevice);
                   }
                }
             }
@@ -369,6 +372,9 @@ std::vector<DudesCab::Device*> DudesCab::FindDevices()
    }
 
    hid_free_enumeration(devs);
+
+   for (Device* device : unusedDevices)
+      delete device;
 
    return devices;
 }
