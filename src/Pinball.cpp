@@ -308,32 +308,6 @@ void Pinball::Setup(const std::string& globalConfigFileName, const std::string& 
                c->SetEffectRGBMinDurationMs(m_globalConfig->GetLedControlMinimumRGBEffectDurationMs());
                c->Setup(l, m_table, m_cabinet, romName);
                delete c;
-
-               std::string dofVersion = LIBDOF_VERSION;
-
-               if (true)
-               {
-                  std::string maxVersion = "";
-                  for (auto* pLedConfig : *l)
-                  {
-                     if (pLedConfig && pLedConfig->HasMinDOFVersion())
-                     {
-                     }
-                  }
-
-                  Log::Warning("UPDATE DIRECT OUTPUT FRAMEWORK!");
-                  if (!maxVersion.empty())
-                  {
-                     Log::Warning(StringExtensions::Build("Current DOF version is {0}, but DOF version {1} or later is required by one or several config files.", dofVersion, maxVersion));
-                  }
-                  try
-                  {
-                  }
-                  catch (const std::exception& e)
-                  {
-                     Log::Exception(StringExtensions::Build("An exception occured when displaying the update notification: {0}", e.what()));
-                  }
-               }
             }
             delete l;
          }
